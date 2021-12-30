@@ -12,13 +12,12 @@ class OptConfiguration:
     opt_iteration: the number of the loops for optimization;
     dim_inputs: dimension of parameter space;
     dim_outputs: dimension of objective space;
-    opt_bounds: parameter domain bound, it is recommended to start from 0. This bound is directly used for optimization
-                if one wants a discrete parameter domain. One can imagine that the parameter domain is spaced by
-                "opt_bounds" grids. The parameter domain for the real function is defined by "fun_bounds", see below.
-                This bound can be calculated by range of fun_bounds divided by increment;
-    fun_bounds: the true bounds of the function. It can be calculated by increment * opt_bounds + intercept;
+    opt_bounds: this bound is directly used for optimization if one wants a discrete parameter domain. One can imagine 
+                that the parameter domain is spaced by "opt_bounds" grids. The parameter domain for the real function 
+                is defined by "fun_bounds", see below. This bound can be calculated by the range of fun_bounds divided 
+                by increment;
+    fun_bounds: the true bounds of the function. It can be calculated by increment * opt_bounds;
     increment: the step size of each parameter;
-    intercept: a value for a function whose true lower bound doesn't start from 0;
     case_folder: defines a folder where all the data are stored. Currently it is only valid for ALPACA, see how the
                  objective is calculated in mytools/test_problems/shu_tgv.py
     debug: debug mode flag;
@@ -29,6 +28,7 @@ class OptConfiguration:
 
     discrete: define the configuration of the discrete assistant. The discrete assistant is designed for getting rid of
               repeat evaluation on a same sample, which often occur if your parameter domain is discrete.
+              
               activate: flag if this assistant is activated;
               method: option "tree" and "constrained". "constrained" is recommended;
               plot: if plot the figures during optimization when using this discrete assistant;

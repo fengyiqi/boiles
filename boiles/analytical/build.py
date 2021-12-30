@@ -10,14 +10,14 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.fit import fit_gpytorch_model
 from ax import SimpleExperiment
 from ax.modelbridge import get_sobol
-from mytools.models.factory import get_botorch
-from mytools.analytical.functions import TestFunction2D
-from mytools.utils import *
+from ..models.factory import get_botorch
+from .functions import TestFunction2D
+from ..utils import *
 from ax.models.torch.utils import (
     _to_inequality_constraints,
     predict_from_model,
 )
-from mytools.analytical.functions import solutions
+from .functions import solutions
 
 import warnings
 from gpytorch.utils.warnings import *
