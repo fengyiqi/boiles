@@ -4,6 +4,8 @@ from .base import ObjectiveFunction
 from ..config.opt_problems import OP
 from ..test_cases.sod_60.sod_disper_60 import SodDisper60
 from ..test_cases.sod_60.sod_shock_60 import SodShock60
+import sympy
+from .base import ObjectiveFunction, try_get_data, get_coords_and_order
 import h5py
 import numpy as np
 
@@ -26,10 +28,11 @@ class SodShockTube(ObjectiveFunction):
                  ):
 
         super(SodShockTube, self).__init__(results_folder, result_filename, git=git)
+        self.dimension = 1
         self.plot = plot
         self.plot_savepath = results_folder
         if self.result_exit:
-            self.result = self.get_shu_h5data(self.result_path, git)
+            self.result = self.get_results(self.result_path)
             self.cells = self.result['density'].shape[0]
             self.dx = 1 / self.cells
             self.reference = self.get_sod_reference_solution()
@@ -98,6 +101,44 @@ class SodShockTube(ObjectiveFunction):
 
         return np.linalg.norm(diff, ord=2)
 
+    def get_ordered_data(self, file, state: str, order, edge_cells):
+        data = try_get_data(file, state, self.dimension)
+        if data is not None:
+            data = np.array(data[order])
+            return data
+        else:
+            return None
+
+    def get_results(self, file):
+
+        with h5py.File(file, "r") as data:
+            cell_vertices = np.array(data["mesh_topology"]["cell_vertex_IDs"])
+            vertex_coordinates = np.array(data["mesh_topology"]["cell_vertex_coordinates"])
+
+        coords, order = get_coords_and_order(cell_vertices, vertex_coordinates, self.dimension)
+        # edge_cells_number: the cell number along each dimension
+        edge_cells_number, is_integer = sympy.integer_nthroot(coords.shape[0], self.dimension)
+
+        x = coords[:, 0]
+        density = self.get_ordered_data(file, "density", order, edge_cells_number)
+        pressure = self.get_ordered_data(file, "pressure", order, edge_cells_number)
+        velocity = self.get_ordered_data(file, "velocity", order, edge_cells_number)
+        effective_dissipation_rate = self.get_ordered_data(file, "effective_dissipation_rate", order, edge_cells_number)
+        numerical_dissipation_rate = self.get_ordered_data(file, "numerical_dissipation_rate", order, edge_cells_number)
+        vorticity = self.get_ordered_data(file, "vorticity", order, edge_cells_number)
+
+        data_dict = {
+            "x": x,
+            'density': density,
+            'pressure': pressure,
+            'velocity': velocity,
+            'vorticity': vorticity,
+            'coords': coords,
+            'effective_dissipation_rate': effective_dissipation_rate,
+            'numerical_dissipation_rate': numerical_dissipation_rate
+        }
+
+        return data_dict
     @staticmethod
     def get_shu_h5data(file, git=False):
 
@@ -109,7 +150,10 @@ class SodShockTube(ObjectiveFunction):
                 pressure = data["simulation"]["pressure"][:]
                 velocity = data["simulation"]["velocityX"][:]
             else:
+                # cell vertices is the sequence number (bianhao) of the cell vertex (dingdian)
+                # it is ordered
                 cell_vertices = data["mesh_topology"]["cell_vertex_IDs"][:, :]
+                # vertex_coordinates is the (x, y, z) of each vertex, not ordered
                 vertex_coordinates = data["mesh_topology"]["cell_vertex_coordinates"][:, :]
                 density = data["cell_data"]["density"][:, 0, 0]
                 pressure = data["cell_data"]["pressure"][:, 0, 0]
@@ -121,10 +165,21 @@ class SodShockTube(ObjectiveFunction):
                     pass
                 cell_vertices = np.array(data["mesh_topology"]["cell_vertex_IDs"])
                 vertex_coordinates = np.array(data["mesh_topology"]["cell_vertex_coordinates"])
-
+        print(len(cell_vertices))
+        for i in cell_vertices:
+            print(i)
+        print(len(vertex_coordinates))
+        for i in vertex_coordinates:
+            print(i)
         ordered_vertex_coordinates = vertex_coordinates[cell_vertices]
+        print(len(ordered_vertex_coordinates))
+        for i in ordered_vertex_coordinates:
+            print(i)
         coords = np.mean(ordered_vertex_coordinates, axis=1)
+        print(len(coords))
+        print(coords)
         first_trafo = coords[:, 0].argsort(kind='stable')
+        print(first_trafo)
 
         cell_vertices = cell_vertices[first_trafo]
         vertex_coordinates = vertex_coordinates[first_trafo]

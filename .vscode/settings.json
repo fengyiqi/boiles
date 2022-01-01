@@ -1,0 +1,5 @@
+{
+    "python.pythonPath": "/home/yiqi/Software/envs/gpytorch/bin/python",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true
+}

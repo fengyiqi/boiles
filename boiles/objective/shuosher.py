@@ -8,6 +8,8 @@ from ..config.opt_problems import *
 import h5py
 import numpy as np
 from ..test_cases import *
+from .base import ObjectiveFunction, try_get_data, get_coords_and_order
+import sympy
 
 si_threshold = ShuBase200.si_threshold
 
@@ -23,57 +25,52 @@ class ShuOsher(ObjectiveFunction):
 
         super(ShuOsher, self).__init__(results_folder, result_filename, git=git)
         self.plot = plot
+        self.dimension = 1
         self.plot_savepath = results_folder
         self.disper_name = OP.test_cases[0].name
         self.shock_name = OP.test_cases[1].name
         if self.result_exit:
-            self.result = self.get_1d_h5data(self.result_path, git)
+            self.result = self.get_results(self.result_path)
             self.solution_filename = ShuBase200.ref_data
-            self.reference_raw = self.get_1d_h5data(self.solution_filename, git=False)
+            self.reference_raw = self.get_results(self.solution_filename)
             self.reference = self.get_fvm_reference()
 
-    @staticmethod
-    def get_1d_h5data(file, git=False):
+    def get_ordered_data(self, file, state: str, order, edge_cells):
+        data = try_get_data(file, state, self.dimension)
+        if data is not None:
+            data = np.array(data[order])
+            return data
+        else:
+            return None
+
+    def get_results(self, file):
+
         with h5py.File(file, "r") as data:
-            if git:
-                cell_vertices = data["domain"]["cell_vertices"][:, :]
-                vertex_coordinates = data["domain"]["vertex_coordinates"][:, :]
-                density = data["simulation"]["density"][:]
-                pressure = data["simulation"]["pressure"][:]
-                velocity = data["simulation"]["velocityX"][:]
-            else:
-                cell_vertices = data["mesh_topology"]["cell_vertex_IDs"][:, :]
-                vertex_coordinates = data["mesh_topology"]["cell_vertex_coordinates"][:, :]
-                density = data["cell_data"]["density"][:, 0, 0]
-                pressure = data["cell_data"]["pressure"][:, 0, 0]
-                velocity = data["cell_data"]["velocity"][:, 0, 0]
+            cell_vertices = np.array(data["mesh_topology"]["cell_vertex_IDs"])
+            vertex_coordinates = np.array(data["mesh_topology"]["cell_vertex_coordinates"])
 
-        ordered_vertex_coordinates = vertex_coordinates[cell_vertices]
-        cell_centers = np.mean(ordered_vertex_coordinates, axis=1)
-        longest_axis = np.argmax(np.argmax(cell_centers, axis=0))
-        x_cell_center = cell_centers[:, longest_axis]
-        min_cell_coordinates = np.min(ordered_vertex_coordinates, axis=1)
-        max_cell_coordinates = np.max(ordered_vertex_coordinates, axis=1)
-        delta_xyz = max_cell_coordinates - min_cell_coordinates
-        # volume = np.prod( delta_xyz, axis = 1 )
+        coords, order = get_coords_and_order(cell_vertices, vertex_coordinates, self.dimension)
+        # edge_cells_number: the cell number along each dimension
+        edge_cells_number, is_integer = sympy.integer_nthroot(coords.shape[0], self.dimension)
 
-        e_i = pressure / (density * (1.4 - 1))
-        e_kin = 0.5 * velocity ** 2
-        energy = density * (e_i + e_kin)
-        entropy = np.log(pressure / (density ** 1.4))
-        enthalpy = (energy + pressure) / density
-        # eva = (energy + pressure) * velocity
+        x = coords[:, 0]
+        density = self.get_ordered_data(file, "density", order, edge_cells_number)
+        pressure = self.get_ordered_data(file, "pressure", order, edge_cells_number)
+        velocity = self.get_ordered_data(file, "velocity", order, edge_cells_number)
+        effective_dissipation_rate = self.get_ordered_data(file, "effective_dissipation_rate", order, edge_cells_number)
+        numerical_dissipation_rate = self.get_ordered_data(file, "numerical_dissipation_rate", order, edge_cells_number)
+        vorticity = self.get_ordered_data(file, "vorticity", order, edge_cells_number)
 
-        data_dict = {'x_cell_center': x_cell_center,
-                     'density': density,
-                     'pressure': pressure,
-                     'velocity': velocity,
-                     'internal_energy': e_i,
-                     'kinetic_energy': e_kin,
-                     'total_energy': energy,
-                     'entropy': entropy,
-                     'enthalpy': enthalpy,
-                     }
+        data_dict = {
+            "x": x,
+            'density': density,
+            'pressure': pressure,
+            'velocity': velocity,
+            'vorticity': vorticity,
+            'coords': coords,
+            'effective_dissipation_rate': effective_dissipation_rate,
+            'numerical_dissipation_rate': numerical_dissipation_rate
+        }
 
         return data_dict
 

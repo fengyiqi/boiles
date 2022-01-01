@@ -4,6 +4,10 @@ import numpy as np
 from fnmatch import fnmatchcase as match
 import matplotlib.pyplot as plt
 import os
+import h5py
+from abc import abstractmethod
+
+
 # from mytools.opt_config import *
 
 
@@ -58,14 +62,56 @@ def check_results_exist(folder: str,
         return [], False
 
 
-def get_data_items(
-        data_type: str,
-        data_name: str,
-        git: bool
-):
-    pass
+# IMPORTANT for git version, get data as
+
+# with h5py.File(file, "r") as data:
+#     density = np.array(data["simulation"]["density"])
+#     velocity_x = np.array(data["simulation"]["velocityX"])
+#     velocity_y = np.array(data["simulation"]["velocityY"])
+#     pressure = np.array(data["simulation"]["pressure"])
+#     cell_vertices = np.array(data["domain"]["cell_vertices"])
+#     vertex_coordinates = np.array(data["domain"]["vertex_coordinates"])
+
+def do_get_data(h5file, state: str, dimension: int):
+    vel_keys = ["velocity_x", "velocity_y", "velocity_z"]
+    vel_dict = {}
+    if state == "velocity":
+        for i in range(dimension):
+            vel_dict[vel_keys[i]] = h5file["cell_data"][state][:, i, 0]
+        if dimension == 1:
+            # for 1D, we only return an array of x velocity
+            return vel_dict["velocity_x"]
+        else:
+            return vel_dict
+    else:
+        return h5file["cell_data"][state][:, 0, 0]
 
 
+def try_get_data(file, output: str, dimension: int):
+    with h5py.File(file, "r") as f:
+        if output in f["cell_data"].keys():
+            return do_get_data(f, output, dimension)
+        else:
+            return None
+
+
+def get_coords_and_order(cell_vertices, vertex_coordinates, dimension):
+    if dimension == 1:
+        ordered_vertex_coordinates = vertex_coordinates[cell_vertices]
+        coords = np.mean(ordered_vertex_coordinates, axis=1)
+        x_order = coords[:, 0].argsort(kind="stable")
+        coords = coords[x_order]
+        order = x_order
+        return coords, order
+    if dimension == 2:
+        ordered_vertex_coordinates = vertex_coordinates[cell_vertices]
+        coords = np.mean(ordered_vertex_coordinates, axis=1)
+        x_order = coords[:, 0].argsort(kind="stable")
+        coords = coords[x_order]
+        y_order = coords[:, 1].argsort(kind="stable")
+        coords = coords[y_order]
+        order = x_order[y_order]
+        return coords, order
 
 
 class ObjectiveFunction(object):
@@ -85,5 +131,16 @@ class ObjectiveFunction(object):
 
         self.reference: dict
 
+    @abstractmethod
+    def get_results(self, file):
+        r"""
+            get all valid results from .h5 data
+        """
+        pass
 
-
+    @abstractmethod
+    def get_ordered_data(self, file, state: str, order, edge_cells):
+        r"""
+            order the data for 1D, 2D and 3D
+        """
+        pass

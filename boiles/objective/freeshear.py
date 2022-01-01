@@ -5,7 +5,7 @@ import time
 import h5py
 
 import sympy
-from .base import ObjectiveFunction
+from .base import ObjectiveFunction, try_get_data, get_coords_and_order
 # from mytools.config.opt_config import *
 import numpy as np
 
@@ -14,104 +14,65 @@ class FreeShearFlow(ObjectiveFunction):
 
     def __init__(self,
                  results_folder: str,
-                 result_filename: str = 'data_10.00*.h5',
+                 result_filename: str = 'data_1.00*.h5',
                  git: bool = False,
-                 cells: int = 64
                  ):
+        self.dimension = 2
         super(FreeShearFlow, self).__init__(results_folder, result_filename, git=git)
         self.plot_savepath = results_folder
+        self.spectrum_data = np.array([])
+        self.reference = np.array([])
         if self.result_exit:
-            self.cells = cells
-            self.result = self.get_data(self.result_path, git);
-            self.spectrum_data = self._create_spectrum()
-            self.reference = self._calculate_reference()
-            self.plot_tke()
+            self.result = self.get_results(self.result_path)
+            # self.spectrum_data = self._create_spectrum()
+            # self.reference = self._calculate_reference()
+            # self.plot_tke()
 
-    def get_data(self, file, git):
-        with h5py.File(file, "r") as data:
-            if git:
-                density = np.array(data["simulation"]["density"])
-                velocity_x = np.array(data["simulation"]["velocityX"])
-                velocity_y = np.array(data["simulation"]["velocityY"])
-                pressure = np.array(data["simulation"]["pressure"])
-                cell_vertices = np.array(data["domain"]["cell_vertices"])
-                vertex_coordinates = np.array(data["domain"]["vertex_coordinates"])
+    def get_ordered_data(self, file, state: str, order, edge_cells):
+        data = try_get_data(file, state, self.dimension)
+        if data is not None:
+            if state == "velocity":
+                data["velocity_x"] = np.array(data["velocity_x"])[order].reshape(edge_cells, edge_cells)
+                data["velocity_y"] = np.array(data["velocity_y"])[order].reshape(edge_cells, edge_cells)
             else:
-                density = np.array(data["cell_data"]["density"][:, 0, 0])
-                velocity_x = np.array(data["cell_data"]["velocity"][:, 0, 0])
-                velocity_y = np.array(data["cell_data"]["velocity"][:, 1, 0])
+                data = np.array(data[order])
+                data = data.reshape(edge_cells, edge_cells)
+            return data
+        else:
+            return None
 
-                pressure = np.array(data["cell_data"]["pressure"][:, 0, 0])
-                try:
-                    effective_diss_rate = np.array(data["cell_data"]["effective_dissipation_rate"][:, 0, 0])
+    def get_results(self, file):
 
-                    numerical_diss_rate = np.array(data["cell_data"]["numerical_dissipation_rate"][:, 0, 0])
-                    vorticity = np.array(data["cell_data"]["vorticity"][:, 0, 0])
-                except:
-                    pass
-                cell_vertices = np.array(data["mesh_topology"]["cell_vertex_IDs"])
-                vertex_coordinates = np.array(data["mesh_topology"]["cell_vertex_coordinates"])
+        with h5py.File(file, "r") as data:
+            cell_vertices = np.array(data["mesh_topology"]["cell_vertex_IDs"])
+            vertex_coordinates = np.array(data["mesh_topology"]["cell_vertex_coordinates"])
 
-        nc, is_integer = sympy.integer_nthroot(density.shape[0], 2)
-        ordered_vertex_coordinates = vertex_coordinates[cell_vertices]
-        coords = np.mean(ordered_vertex_coordinates, axis=1)
+        coords, order = get_coords_and_order(cell_vertices, vertex_coordinates, self.dimension)
+        # edge_cells_number: the cell number along each dimension
+        edge_cells_number, is_integer = sympy.integer_nthroot(coords.shape[0], self.dimension)
+        density = self.get_ordered_data(file, "density", order, edge_cells_number)
+        pressure = self.get_ordered_data(file, "pressure", order, edge_cells_number)
+        velocity = self.get_ordered_data(file, "velocity", order, edge_cells_number)
+        effective_dissipation_rate = self.get_ordered_data(file, "effective_dissipation_rate", order, edge_cells_number)
+        numerical_dissipation_rate = self.get_ordered_data(file, "numerical_dissipation_rate", order, edge_cells_number)
+        vorticity = self.get_ordered_data(file, "vorticity", order, edge_cells_number)
 
-        first_trafo = coords[:, 0].argsort(kind='stable')
-        coords = coords[first_trafo]
-        second_trafo = coords[:, 1].argsort(kind='stable')
-        coords = coords[second_trafo]
-
-        trafo = first_trafo[second_trafo]
-
-        density = density[trafo]
-        density = density.reshape(self.cells, self.cells)
-        pressure = pressure[trafo]
-        pressure = pressure.reshape(self.cells, self.cells)
-        velocity_x = velocity_x[trafo]
-        velocity_x = velocity_x.reshape(self.cells, self.cells)
-        velocity_y = velocity_y[trafo]
-        velocity_y = velocity_y.reshape(self.cells, self.cells)
-        vorticity = None
-        # effective_diss_rate = None
-        # numerical_diss_rate = None
-        try:
-            effective_diss_rate = effective_diss_rate[trafo]
-            effective_diss_rate = effective_diss_rate.reshape(self.cells, self.cells)
-            numerical_diss_rate = numerical_diss_rate[trafo]
-            numerical_diss_rate = numerical_diss_rate.reshape(self.cells, self.cells)
-            # vorticity = vorticity[trafo]
-            # vorticity = vorticity.reshape(self.cells, self.cells)
-        except:
-            pass
-
-        velocity = {'velocity_x': velocity_x,
-                    'velocity_y': velocity_y
-                    }
-        data_dict = {'x_cell_center': None,
-                     'density': density,
-                     'pressure': pressure,
-                     'velocity': velocity,
-                     'vorticity': vorticity,
-                     'internal_energy': None,
-                     'kinetic_energy': None,
-                     'total_energy': None,
-                     'entropy': None,
-                     'enthalpy': None,
-                     'nc': nc,
-                     'cell_vertices': cell_vertices,
-                     'vertex_coordinates': vertex_coordinates,
-                     'ordered_vertex_coordinates': ordered_vertex_coordinates,
-                     'coords': coords,
-                     'effective_dissipation_rate': effective_diss_rate,
-                     'numerical_dissipation_rate': numerical_diss_rate
-                     }
+        data_dict = {
+            'density': density,
+            'pressure': pressure,
+            'velocity': velocity,
+            'vorticity': vorticity,
+            'coords': coords,
+            'effective_dissipation_rate': effective_dissipation_rate,
+            'numerical_dissipation_rate': numerical_dissipation_rate
+        }
 
         return data_dict
 
     def _create_spectrum(self):
         velocity_x = self.result['velocity']['velocity_x']
         velocity_y = self.result['velocity']['velocity_y']
-        N = self.result['nc']
+        N = self.result['density'].shape[0]
         # U0 = 33.13148
         U0 = 1.0
         Figs_Path = self.results_folder
