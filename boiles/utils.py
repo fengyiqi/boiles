@@ -184,25 +184,6 @@ def plot_runtime_contour(name_list, ehvi_model, iteration):
         # plt.close()
 
 
-def apply_exponential_weights(data):
-    data = data.squeeze()
-    num = len(data)
-    x = np.linspace(0, 1, num)
-    y = np.exp(x)
-    weights = y / y.sum()
-    log(weights)
-    return np.dot(weights, data)
-
-
-def apply_linear_weights(data):
-    data = data.squeeze()
-    num = len(data)
-    x = np.linspace(0, 1, num)
-    weights = x / x.sum()
-    log(weights)
-    return np.dot(weights, data)
-
-
 def save_model_state(ehvi_model: TorchModelBridge, iteration):
 
     save_path = f'{OC.case_folder}/model_state'
@@ -212,6 +193,7 @@ def save_model_state(ehvi_model: TorchModelBridge, iteration):
         model_dict = model.state_dict()
         torch.save(model_dict, f'{save_path}/{model.name}_model_state_{iteration}.pth')
 
+
 def save_single_model_state(ei_model: TorchModelBridge, iteration):
 
     save_path = f'{OC.case_folder}/model_state'
@@ -220,156 +202,6 @@ def save_single_model_state(ei_model: TorchModelBridge, iteration):
 
     model_dict = ei_model.model.model.state_dict()
     torch.save(model_dict, f'{save_path}/{ei_model.model.model.name}_model_state_{iteration}.pth')
-
-# def initialize_alpaca(ic: int,  # a value that can be divided by 4
-#                       dim: int,
-#                       stencil: str = 'WENOCU6M1',
-#                       cq: int = 1000,
-#                       q: int = 4,
-#                       min_time_step: str = "std::numeric_limits<double>::epsilon()"):
-#     r"""
-#     Initialize ALPACA, including set parameters, cmake ALPACA according to the given dimension
-#     and make ALPACA
-#     :param stencil:
-#     :param cq: cq in WENO5-CU6-M1
-#     :param q: q in WENO5-CU6-M1
-#     :param ic: internal cells per block
-#     :param dim: case dimension
-#     :param min_time_step: minimum time step size.
-#     :return: None
-#     """
-#     alpaca = AlpacaBuilder()
-#     alpaca.set_reconstruction_stencil(stencil)
-#     alpaca.set_limit_end_time("true")
-#     alpaca.set_ic(ic)
-#     alpaca.set_minimum_time_step_size(min_time_step)
-#     if stencil == 'WENOCU6M1':
-#         alpaca.set_m1_scheme(cq, q)
-#
-#     alpaca.cmake_alpaca(dimension=dim)
-#     alpaca.compile_alpaca()
-#
-#     return alpaca
-
-
-def unit_x(value):
-    cq_raw = value[:, 0]
-    q_raw = value[:, 1]
-    cq = cq_raw / OC.intervals['cq']
-    q = q_raw / OC.intervals['q']
-    cq = (cq - OC.bounds[0][0]) / (OC.bounds[0][1] - OC.bounds[0][0])
-    q = (q - OC.bounds[1][0]) / (OC.bounds[1][1] - OC.bounds[1][0])
-    return np.vstack((cq, q)).transpose()
-
-
-def de_unit_x(value):
-    cq_unit = value[:, 0]
-    q_unit = value[:, 1]
-    cq_raw = cq_unit * (OC.bounds[0][1] - OC.bounds[0][0]) + OC.bounds[0][0]
-    q_raw = q_unit * (OC.bounds[1][1] - OC.bounds[1][0]) + OC.bounds[1][0]
-    cq_raw *= OC.intervals['cq']
-    q_raw *= OC.intervals['q']
-    return np.vstack((cq_raw, q_raw)).transpose()
-
-
-def de_unit_single_x(value, key: str):
-    if key == "cq":
-        x = value * (OC.bounds[0][1] - OC.bounds[0][0]) + OC.bounds[0][0]
-        x *= OC.intervals['cq']
-    if key == "q":
-        x = value * (OC.bounds[1][1] - OC.bounds[1][0]) + OC.bounds[1][0]
-        x *= OC.intervals['q']
-    return x.reshape(-1, 1)
-
-
-def standaardize_y(value):
-    mean = value.mean()
-    std = value.std()
-    return (value - mean) / std
-
-
-def de_standaardize_y(value, ref):
-    mean = np.array(ref.mean())
-    std = np.array(ref.std())
-    return value * std + mean
-
-
-def plot_contour(model,
-                 title=None,
-                 raw_data=False,
-                 ref=None,
-                 levels=30,
-                 label_fontsize=10,
-                 tick_fontsize=10,
-                 save=True,
-                 save_name="gp.jpg"):
-    n = 100
-    cq_test = torch.linspace(0, 1, n).reshape((-1, 1))
-    q_test = torch.linspace(0, 1, n).reshape((-1, 1))
-    cq_q_test = torch.cat((cq_test, q_test), 1)
-    cq_q_test = gpytorch.utils.grid.create_data_from_grid(cq_q_test)
-
-    model.eval()
-    with torch.no_grad():
-        # compute posterior
-        posterior_test = model.posterior(cq_q_test)
-        # Get upper and lower confidence bounds (2 standard deviations from the mean)
-        lower, upper = posterior_test.mvn.confidence_region()
-
-    if raw_data:
-        q_test = de_unit_single_x(q_test, 'q')
-        cq_test = de_unit_single_x(cq_test, 'cq')
-    x1, x2 = np.meshgrid(q_test, cq_test)
-    pred_test = posterior_test.mean.cpu().numpy()
-    if raw_data:
-        pred_test = de_standaardize_y(pred_test, ref=ref)
-    pred_test = pred_test.reshape((n, n)).transpose()
-
-    fig, ax = plt.subplots(figsize=(6, 5), dpi=100)
-    con = ax.contourf(x1, x2, pred_test, levels=levels)
-    ax.set_xlabel(r'$q$', fontsize=label_fontsize)
-    ax.set_ylabel(r'$C_q$', fontsize=label_fontsize)
-    ax.tick_params(labelsize=tick_fontsize)
-    if title is not None:
-        ax.set_title(title)
-    if raw_data:
-        ax.yaxis.get_major_formatter().set_powerlimits((3, 3))
-    cbar = fig.colorbar(con, ax=ax)
-    #     cbar.set_label(colorbar_label, size=18)
-    cbar.ax.tick_params(labelsize=tick_fontsize)
-    cbar.formatter.set_powerlimits((-2, 2))
-
-    cbar.update_ticks()
-    fig.tight_layout()
-    if save:
-        plt.savefig(save_name)
-
-
-def cross_validation(model, cq_q, accu, title=None, raw_data=False):
-
-    model.eval()
-    with torch.no_grad():
-        # compute posterior
-        posterior = model.posterior(cq_q)
-
-        # Get upper and lower confidence bounds (2 standard deviations from the mean)
-        lower, upper = posterior.mvn.confidence_region()
-
-    pred = posterior.mean.cpu().numpy()
-    if raw_data:
-        ref = accu
-        pred = de_standaardize_y(pred, ref=ref)
-    diag = np.linspace(accu.min(), accu.max(), 50)
-
-    fig, ax = plt.subplots(figsize=(5, 5), dpi=100)
-    ax.scatter(accu, pred, c='none', edgecolor='blue')
-    ax.set_xlabel('Solution')
-    ax.set_ylabel('Prediction')
-
-    if title is not None:
-        ax.set_title(title)
-    ax.grid()
-    ax.plot(diag, diag, c='black', linestyle='--')
 
 
 def log(string: str, print_to_terminal=True):
