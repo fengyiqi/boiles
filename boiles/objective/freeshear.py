@@ -56,6 +56,7 @@ class FreeShearFlow(ObjectiveFunction):
         effective_dissipation_rate = self.get_ordered_data(file, "effective_dissipation_rate", order, edge_cells_number)
         numerical_dissipation_rate = self.get_ordered_data(file, "numerical_dissipation_rate", order, edge_cells_number)
         vorticity = self.get_ordered_data(file, "vorticity", order, edge_cells_number)
+        ducros = self.get_ordered_data(file, "ducros", order, edge_cells_number)
 
         data_dict = {
             'density': density,
@@ -64,7 +65,8 @@ class FreeShearFlow(ObjectiveFunction):
             'vorticity': vorticity,
             'coords': coords,
             'effective_dissipation_rate': effective_dissipation_rate,
-            'numerical_dissipation_rate': numerical_dissipation_rate
+            'numerical_dissipation_rate': numerical_dissipation_rate,
+            'ducros': ducros
         }
 
         return data_dict
