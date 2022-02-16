@@ -21,6 +21,29 @@ def periodic(array: np.array, halo_size=2):
     return value
 
 
+def symmetry_x_fixed_y(array: np.array, halo_size=2):
+    r"""
+    Create symmetry boundary.
+    """
+    value = array.copy()
+    if len(array.shape) == 1:
+        for i in range(halo_size):
+            value = np.insert(value, 0, array[i])
+            value = np.append(value, array[-(i+1)])
+    elif len(array.shape) == 2:
+        # horizontal
+        for i in range(halo_size):
+            value = np.insert(value, 0, array[:, i], axis=1)
+            value = np.append(value, array[:, -(i+1)].reshape(-1, 1), axis=1)
+        # vertical
+        for i in range(halo_size):
+            value = np.insert(value, 0, value[0, :], axis=0)
+            value = np.append(value, value[-1, :].reshape(1, -1), axis=0)
+    else:
+        raise Exception(f"Boundary condition for {len(value)}-dimensional is not implemented yet. ")
+    return value
+
+
 def symmetry(array: np.array, halo_size=2):
     r"""
     Create symmetry boundary.
