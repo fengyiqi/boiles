@@ -139,7 +139,7 @@ class ObjectiveFunction(object):
         pass
 
     @abstractmethod
-    def get_ordered_data(self, file, state: str, order, edge_cells):
+    def get_ordered_data(self, file, state: str, order):
         r"""
             order the data for 1D, 2D and 3D
         """
