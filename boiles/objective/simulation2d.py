@@ -56,6 +56,8 @@ class Simulation2D(ObjectiveFunction):
         vorticity = self.get_ordered_data(file, "vorticity", order)
         ducros = self.get_ordered_data(file, "ducros", order)
         schlieren = self.get_ordered_data(file, "schlieren", order)
+        temperature = self.get_ordered_data(file, "temperature", order)
+        thermal_conductivity = self.get_ordered_data(file, "thermal_conductivity", order)
 
         data_dict = {
             'density': density,
@@ -67,7 +69,9 @@ class Simulation2D(ObjectiveFunction):
             'numerical_dissipation_rate': numerical_dissipation_rate,
             'ducros': ducros,
             'kinetic_energy': kinetic_energy,
-            'schlieren': schlieren
+            'schlieren': schlieren,
+            'temperature': temperature,
+            'thermal_conductivity': thermal_conductivity
         }
 
         return data_dict, is_integer
@@ -81,8 +85,9 @@ class Simulation2D(ObjectiveFunction):
         num_rate = self.result["numerical_dissipation_rate"]
         dissipation = np.where(num_rate >= 0, num_rate, 0).sum()
         dispersion = np.where(num_rate <= 0, num_rate, 0).sum()
+        true_error = num_rate.sum()
         abs_error = np.abs(num_rate).sum()
-        return dissipation, dispersion, abs_error
+        return dissipation, dispersion, true_error, abs_error
 
     def _create_spectrum(self):
         if not self.is_square:
