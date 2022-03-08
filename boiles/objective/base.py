@@ -96,22 +96,22 @@ def try_get_data(file, output: str, dimension: int):
 
 
 def get_coords_and_order(cell_vertices, vertex_coordinates, dimension):
+    ordered_vertex_coordinates = vertex_coordinates[cell_vertices]
+    coords = np.mean(ordered_vertex_coordinates, axis=1)
+    x_order = coords[:, 0].argsort(kind="stable")
+    coords = coords[x_order]
+    order = x_order
     if dimension == 1:
-        ordered_vertex_coordinates = vertex_coordinates[cell_vertices]
-        coords = np.mean(ordered_vertex_coordinates, axis=1)
-        x_order = coords[:, 0].argsort(kind="stable")
-        coords = coords[x_order]
-        order = x_order
         return coords, order
+    y_order = coords[:, 1].argsort(kind="stable")
+    coords = coords[y_order]
+    order = x_order[y_order]
     if dimension == 2:
-        ordered_vertex_coordinates = vertex_coordinates[cell_vertices]
-        coords = np.mean(ordered_vertex_coordinates, axis=1)
-        x_order = coords[:, 0].argsort(kind="stable")
-        coords = coords[x_order]
-        y_order = coords[:, 1].argsort(kind="stable")
-        coords = coords[y_order]
-        order = x_order[y_order]
         return coords, order
+    z_order = coords[:, 2].argsort(kind="stable")
+    coords = coords[z_order]
+    order = x_order[y_order[z_order]]
+    return coords, order
 
 
 class ObjectiveFunction(object):

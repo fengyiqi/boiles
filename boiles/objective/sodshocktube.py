@@ -5,7 +5,8 @@ from ..config.opt_problems import OP
 from ..test_cases.sod_60.sod_disper_60 import SodDisper60
 from ..test_cases.sod_60.sod_shock_60 import SodShock60
 import sympy
-from .base import ObjectiveFunction, try_get_data, get_coords_and_order
+from .base import try_get_data, get_coords_and_order
+from .simulation1d import Simulation1D
 import h5py
 import numpy as np
 
@@ -13,12 +14,12 @@ index_group = {
     60: {
         "density": [40, 41, 50, 51],
         "pressure": [50, 51],
-        "x_velocity": [50, 51]
+        "velocity": [50, 51]
     }
 }
 
 
-class SodShockTube(ObjectiveFunction):
+class Sod(Simulation1D):
 
     def __init__(self,
                  results_folder: str,
@@ -27,18 +28,13 @@ class SodShockTube(ObjectiveFunction):
                  plot: bool = True,
                  ):
 
-        super(SodShockTube, self).__init__(results_folder, result_filename, git=git)
-        self.dimension = 1
-        self.plot = plot
-        self.plot_savepath = results_folder
+        super(Sod, self).__init__(results_folder, result_filename, git=git)
         if self.result_exit:
-            self.result = self.get_results(self.result_path)
             self.cells = self.result['density'].shape[0]
             self.dx = 1 / self.cells
             self.reference = self.get_sod_reference_solution()
             # self.get_all_gradients_difference()
 
-    # @staticmethod
     def get_sod_reference_solution(self, cells=None) -> dict:
         if cells is None:
             cells = self.cells
@@ -61,7 +57,7 @@ class SodShockTube(ObjectiveFunction):
             'x_cell_center': x,
             'pressure': pressure,
             'density': density,
-            'x_velocity': x_velocity
+            'velocity': x_velocity
         }
 
     def get_all_gradients_difference(self, key='density', ord=2):
@@ -93,137 +89,14 @@ class SodShockTube(ObjectiveFunction):
         # self.disper = np.linalg.norm(g_diff, ord=ord)
 
     def get_all_value_difference(self, key='density'):
-
         ref = np.delete(self.get_sod_reference_solution()[key], index_group[self.cells][key])
         results = np.delete(self.result[key], index_group[self.cells][key])
-
         diff = abs(results - ref)
-
         return np.linalg.norm(diff, ord=2)
 
-    def get_ordered_data(self, file, state: str, order, edge_cells):
-        data = try_get_data(file, state, self.dimension)
-        if data is not None:
-            data = np.array(data[order])
-            return data
-        else:
-            return None
 
-    def get_results(self, file):
-
-        with h5py.File(file, "r") as data:
-            cell_vertices = np.array(data["mesh_topology"]["cell_vertex_IDs"])
-            vertex_coordinates = np.array(data["mesh_topology"]["cell_vertex_coordinates"])
-
-        coords, order = get_coords_and_order(cell_vertices, vertex_coordinates, self.dimension)
-        # edge_cells_number: the cell number along each dimension
-        edge_cells_number, is_integer = sympy.integer_nthroot(coords.shape[0], self.dimension)
-
-        x = coords[:, 0]
-        density = self.get_ordered_data(file, "density", order, edge_cells_number)
-        pressure = self.get_ordered_data(file, "pressure", order, edge_cells_number)
-        velocity = self.get_ordered_data(file, "velocity", order, edge_cells_number)
-        effective_dissipation_rate = self.get_ordered_data(file, "effective_dissipation_rate", order, edge_cells_number)
-        numerical_dissipation_rate = self.get_ordered_data(file, "numerical_dissipation_rate", order, edge_cells_number)
-        vorticity = self.get_ordered_data(file, "vorticity", order, edge_cells_number)
-
-        data_dict = {
-            "x": x,
-            'density': density,
-            'pressure': pressure,
-            'velocity': velocity,
-            'vorticity': vorticity,
-            'coords': coords,
-            'effective_dissipation_rate': effective_dissipation_rate,
-            'numerical_dissipation_rate': numerical_dissipation_rate
-        }
-
-        return data_dict
-    @staticmethod
-    def get_shu_h5data(file, git=False):
-
-        with h5py.File(file, "r") as data:
-            if git:
-                cell_vertices = data["domain"]["cell_vertices"][:, :]
-                vertex_coordinates = data["domain"]["vertex_coordinates"][:, :]
-                density = data["simulation"]["density"][:]
-                pressure = data["simulation"]["pressure"][:]
-                velocity = data["simulation"]["velocityX"][:]
-            else:
-                # cell vertices is the sequence number (bianhao) of the cell vertex (dingdian)
-                # it is ordered
-                cell_vertices = data["mesh_topology"]["cell_vertex_IDs"][:, :]
-                # vertex_coordinates is the (x, y, z) of each vertex, not ordered
-                vertex_coordinates = data["mesh_topology"]["cell_vertex_coordinates"][:, :]
-                density = data["cell_data"]["density"][:, 0, 0]
-                pressure = data["cell_data"]["pressure"][:, 0, 0]
-                velocity = data["cell_data"]["velocity"][:, 0, 0]
-                try:
-                    effective_diss_rate = np.array(data["cell_data"]["effective_dissipation_rate"][:, 0, 0])
-                    numerical_diss_rate = np.array(data["cell_data"]["numerical_dissipation_rate"][:, 0, 0])
-                except:
-                    pass
-                cell_vertices = np.array(data["mesh_topology"]["cell_vertex_IDs"])
-                vertex_coordinates = np.array(data["mesh_topology"]["cell_vertex_coordinates"])
-        print(len(cell_vertices))
-        for i in cell_vertices:
-            print(i)
-        print(len(vertex_coordinates))
-        for i in vertex_coordinates:
-            print(i)
-        ordered_vertex_coordinates = vertex_coordinates[cell_vertices]
-        print(len(ordered_vertex_coordinates))
-        for i in ordered_vertex_coordinates:
-            print(i)
-        coords = np.mean(ordered_vertex_coordinates, axis=1)
-        print(len(coords))
-        print(coords)
-        first_trafo = coords[:, 0].argsort(kind='stable')
-        print(first_trafo)
-
-        cell_vertices = cell_vertices[first_trafo]
-        vertex_coordinates = vertex_coordinates[first_trafo]
-        density = density[first_trafo]
-        pressure = pressure[first_trafo]
-        velocity = velocity[first_trafo]
-        effective_diss_rate = effective_diss_rate[first_trafo]
-        numerical_diss_rate = numerical_diss_rate[first_trafo]
-
-        cell_centers = np.mean(ordered_vertex_coordinates, axis=1)
-        longest_axis = np.argmax(np.argmax(cell_centers, axis=0))
-        x_cell_center = cell_centers[:, longest_axis]
-        min_cell_coordinates = np.min(ordered_vertex_coordinates, axis=1)
-        max_cell_coordinates = np.max(ordered_vertex_coordinates, axis=1)
-        delta_xyz = max_cell_coordinates - min_cell_coordinates
-        # volume = np.prod( delta_xyz, axis = 1 )
-
-        e_i = pressure / (density * (1.4 - 1))
-        e_kin = 0.5 * velocity ** 2
-        energy = density * (e_i + e_kin)
-        entropy = np.log(pressure / (density ** 1.4))
-        enthalpy = (energy + pressure) / density
-        # eva = (energy + pressure) * velocity
-
-        data_dict = {'x_cell_center': x_cell_center,
-                     'density': density,
-                     'pressure': pressure,
-                     'x_velocity': velocity,
-                     'internal_energy': e_i,
-                     'kinetic_energy': e_kin,
-                     'total_energy': energy,
-                     'entropy': entropy,
-                     'enthalpy': enthalpy,
-                     'numerical_dissipation_rate': numerical_diss_rate,
-                     'effective_dissipation_rate': effective_diss_rate,
-                     }
-
-        return data_dict
 
     def objective_disper(self, prop="density"):
-        r"""
-        Return a clamped error
-        :return: error and simulation state.
-        """
 
         if OP.test_cases is not None and OP.test_cases[0] is SodDisper60:
             upper_bound = OP.test_cases[0].highest_error_from_initial
@@ -246,25 +119,21 @@ class SodShockTube(ObjectiveFunction):
         :return: error and simulation state.
         """
         if props is None:
-            props = ["density", "pressure", "x_velocity"]
+            props = ["density", "pressure", "velocity"]
         upper_bound = SodDisper60.highest_error_from_initial
         if self.result_exit:
-            if OP.test_cases is not None and OP.test_cases[0] is SodDisper60:
-                upper_bound = OP.test_cases[0].highest_error_from_initial
-                errors = np.array([self.objective_disper(prop=prop)[0] for prop in props])
-            else:
-                errors = np.array([self.objective_disper(prop=prop) for prop in props])
-            temp = 0
-            for j, error in enumerate(errors):
-                temp += SodDisper60.normalize(error, props[j])
+            errors = np.array([self.get_all_value_difference(key=prop) for prop in props])
+            sum_error = 0
+            for i, error in enumerate(errors):
+                sum_error += SodDisper60.normalize(error, props[i])
 
-            e = np.clip(temp, -np.inf, upper_bound)
+            sum_error_clipped = np.clip(sum_error, -np.inf, upper_bound)
             if OP.test_cases is None:
-                return e
+                return sum_error_clipped
             else:
-                return e, temp, 'completed',
+                return sum_error_clipped, sum_error, 'completed',
         else:
-            return upper_bound, 1000, 'divergent'
+            return upper_bound, np.nan, 'divergent'
 
     def objective_shock(self, prop="density"):
         r"""

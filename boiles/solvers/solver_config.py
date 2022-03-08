@@ -15,6 +15,7 @@ class SolverConfiguration:
     # if your ALPACA was cloned from gitlab, then here should be 'git'
     alpaca_version = 'aer'
     Riemann = 'hllc'
+    alpaca_executable = None
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):

@@ -8,20 +8,18 @@ import numpy as np
 from boiles.postprocessing.smoothness import do_weno5_si, symmetry, symmetry_x_fixed_y
 
 
-class Simulation2D(ObjectiveFunction):
+class Simulation3D(ObjectiveFunction):
 
     def __init__(self,
                  results_folder: str,
-                 result_filename: str = 'data_1.00*.h5',
+                 result_filename: str = 'data_20.00*.h5',
                  git: bool = False,
                  shape: tuple = None
                  ):
-        self.dimension = 2
-        super(Simulation2D, self).__init__(results_folder, result_filename, git=git)
+        self.dimension = 3
+        super(Simulation3D, self).__init__(results_folder, result_filename, git=git)
         self.shape = shape
         self.smoothness_threshold = 0.33
-        self.center = 0
-        self.realize = 0
         if self.result_exit:
             self.result, self.is_square = self.get_results(self.result_path)
 
@@ -31,6 +29,7 @@ class Simulation2D(ObjectiveFunction):
             if state == "velocity":
                 data["velocity_x"] = np.array(data["velocity_x"])[order].reshape(self.shape)
                 data["velocity_y"] = np.array(data["velocity_y"])[order].reshape(self.shape)
+                data["velocity_z"] = np.array(data["velocity_z"])[order].reshape(self.shape)
             else:
                 data = np.array(data[order])
                 data = data.reshape(self.shape)
@@ -48,11 +47,11 @@ class Simulation2D(ObjectiveFunction):
         # edge_cells_number: the cell number along each dimension
         edge_cells_number, is_integer = sympy.integer_nthroot(coords.shape[0], self.dimension)
         if self.shape is None:
-            self.shape = (edge_cells_number, edge_cells_number)
+            self.shape = (edge_cells_number, edge_cells_number, edge_cells_number)
         density = self.get_ordered_data(file, "density", order)
         pressure = self.get_ordered_data(file, "pressure", order)
         velocity = self.get_ordered_data(file, "velocity", order)
-        kinetic_energy = 0.5 * density * (velocity["velocity_x"]**2 + velocity["velocity_y"]**2)
+        kinetic_energy = 0.5 * density * (velocity["velocity_x"]**2 + velocity["velocity_y"]**2 + velocity["velocity_z"]**2)
         effective_dissipation_rate = self.get_ordered_data(file, "effective_dissipation_rate", order)
         numerical_dissipation_rate = self.get_ordered_data(file, "numerical_dissipation_rate", order)
         vorticity = self.get_ordered_data(file, "vorticity", order)
@@ -78,11 +77,6 @@ class Simulation2D(ObjectiveFunction):
 
         return data_dict, is_integer
 
-    def smoothness(self, threshold=None):
-        if threshold is None:
-            threshold = self.smoothness_threshold
-        return internal_smoothness(self.result["numerical_dissipation_rate"], threshold=threshold)
-
     def truncation_errors(self):
         r"""
             return: dissipation, dispersion, true_error, abs_error
@@ -99,50 +93,60 @@ class Simulation2D(ObjectiveFunction):
             raise RuntimeError("For non-square domain, no spectrum can be computed!")
         velocity_x = self.result['velocity']['velocity_x']
         velocity_y = self.result['velocity']['velocity_y']
+        velocity_z = self.result['velocity']['velocity_z']
         N = self.shape[0]
         # U0 = 33.13148
         U0 = 1.0
-        Figs_Path = self.results_folder
 
         eps = 1e-50  # to void log(0)
 
         U = velocity_x / U0
         V = velocity_y / U0
+        W = velocity_z / U0
 
         amplsU = abs(np.fft.fftn(U) / U.size)
         amplsV = abs(np.fft.fftn(V) / V.size)
+        amplsW = abs(np.fft.fftn(W) / W.size)
 
         EK_U = amplsU ** 2
         EK_V = amplsV ** 2
+        EK_W = amplsW ** 2
 
         EK_U = np.fft.fftshift(EK_U)
         EK_V = np.fft.fftshift(EK_V)
+        EK_W = np.fft.fftshift(EK_W)
+
         box_sidex = np.shape(EK_U)[0]
         box_sidey = np.shape(EK_U)[1]
+        box_sidez = np.shape(EK_U)[2]
 
-        box_radius = int(np.ceil((np.sqrt((box_sidex) ** 2 + (box_sidey) ** 2 )) / 2.) + 1)
+        box_radius = int(np.ceil((np.sqrt((box_sidex) ** 2 + (box_sidey) ** 2 + (box_sidez) ** 2)) / 2.) + 1)
 
         centerx = int(box_sidex / 2)
         centery = int(box_sidey / 2)
+        centerz = int(box_sidez / 2)
         self.center = centerx
 
         EK_U_avsphr = np.zeros(box_radius, ) + eps  ## size of the radius
         EK_V_avsphr = np.zeros(box_radius, ) + eps  ## size of the radius
+        EK_W_avsphr = np.zeros(box_radius, ) + eps  ## size of the radius
 
         for i in range(box_sidex):
             for j in range(box_sidey):
-                wn = int(np.round(np.sqrt((i - centerx) ** 2 + (j - centery) ** 2)))
-                EK_U_avsphr[wn] = EK_U_avsphr[wn] + EK_U[i, j]
-                EK_V_avsphr[wn] = EK_V_avsphr[wn] + EK_V[i, j]
+                for k in range(box_sidez):
+                    wn = int(np.round(np.sqrt((i - centerx) ** 2 + (j - centery) ** 2 + (k - centerz) ** 2)))
+                    EK_U_avsphr[wn] = EK_U_avsphr[wn] + EK_U[i, j, k]
+                    EK_V_avsphr[wn] = EK_V_avsphr[wn] + EK_V[i, j, k]
+                    EK_W_avsphr[wn] = EK_W_avsphr[wn] + EK_W[i, j, k]
 
-        EK_avsphr = 0.5 * (EK_U_avsphr + EK_V_avsphr)
-        self.realsize = len(np.fft.rfft(U[:, 0]))
+        EK_avsphr = 0.5 * (EK_U_avsphr + EK_V_avsphr + EK_W_avsphr)
+        self.realsize = len(np.fft.rfft(U[:, 0, 0]))
 
         dataout = np.zeros((box_radius, 2))
         dataout[:, 0] = np.arange(0, len(dataout))
         dataout[:, 1] = EK_avsphr[0:len(dataout)]
 
-        np.savetxt(Figs_Path + self.result_filename[:-8] + '.csv', dataout, delimiter=",")
+        np.savetxt(self.results_folder + self.result_filename[:-8] + '.csv', dataout, delimiter=",")
 
         return dataout
 
@@ -150,15 +154,15 @@ class Simulation2D(ObjectiveFunction):
 
         effective_wn = slice(7, self.realsize + 1)
 
-        wn_for_interpolation = spectrum[effective_wn, 0].reshape(-1, 1)
+        wn_for_interpolation = spectrum[effective_wn, 0]
         ke_for_interpolation = spectrum[effective_wn, 1].reshape(-1, 1)
         p = np.power(wn_for_interpolation, -5 / 3).reshape(-1, 1)
         A = (np.linalg.inv(p.T.dot(p))).dot(p.T).dot(ke_for_interpolation)
-        return A
+        return A.squeeze()
 
     def _calculate_reference(self, spectrum):
         A = self._calculate_A(spectrum)
-        reference = A * np.power(spectrum[:, 0], -5 / 3).reshape(-1, 1)
+        reference = A * np.power(spectrum[:, 0], -5 / 3)
         return reference
 
     def plot_tke(self, save_path: str = None):
@@ -179,7 +183,7 @@ class Simulation2D(ObjectiveFunction):
                   'k--',
                   linewidth=0.8,
                   label=f'$k\geq{self.realsize}$')
-        ax.loglog(spectrum_data[:, 0].squeeze(), spectrum_ref, 'r', linewidth=0.8, label='$ref$')
+        ax.loglog(spectrum_data[:, 0], spectrum_ref, 'r', linewidth=0.8, label='$ref$')
         ax.legend(loc='lower left')
         ax.set_ylim(10 ** -15, 1)
         ax.grid(which='both')
@@ -188,27 +192,3 @@ class Simulation2D(ObjectiveFunction):
         plt.show()
         plt.close(fig)
 
-
-def internal_smoothness(value, threshold=0.333):
-    # compute internal smoothness indicator (internal means we don't construct boundary, e.g. 64*64 -> 60*60)
-    x_size, y_size = value[2:-2, 2:-2].shape
-    si_buffer = np.zeros((x_size, y_size))
-    stencil = np.zeros(5)
-    for y in np.arange(y_size):
-        for x in np.arange(x_size):
-            stencil[0] = value[x, y + 2]
-            stencil[1] = value[x + 1, y + 2]
-            stencil[2] = value[x + 2, y + 2]
-            stencil[3] = value[x + 3, y + 2]
-            stencil[4] = value[x + 4, y + 2]
-            _, a2_weno5_x, a3_weno5_x = do_weno5_si(stencil)
-            stencil[0] = value[x + 2, y]
-            stencil[1] = value[x + 2, y + 1]
-            stencil[2] = value[x + 2, y + 2]
-            stencil[3] = value[x + 2, y + 3]
-            stencil[4] = value[x + 2, y + 4]
-            _, a2_weno5_y, a3_weno5_y = do_weno5_si(stencil)
-            si_buffer[x, y] = min([a2_weno5_x, a3_weno5_x, a2_weno5_y, a3_weno5_y])
-    si_regular = np.where(si_buffer > threshold, 1, 0)
-    score = si_regular.sum() / (x_size * y_size)
-    return si_regular, score
