@@ -25,7 +25,7 @@ class TaylorGreenVortex(Simulation3D):
                  ):
         super(TaylorGreenVortex, self).__init__(results_folder, result_filename, git=git)
         self.center = 0
-        self.realize = 0
+        self.realsize = 0
 
     def objective_spectrum(self):
         r"""
@@ -39,10 +39,10 @@ class TaylorGreenVortex(Simulation3D):
             upper_bound = np.inf
 
         if self.result_exit:
-            effective_wn = slice(start_wn, self.realsize + 1)
 
             spectrum_data = self._create_spectrum()
             spectrum_ref = self._calculate_reference(spectrum_data)
+            effective_wn = slice(start_wn, self.realsize + 1)
             wn_wise_error = np.log(spectrum_data[effective_wn, 1]) - np.log(spectrum_ref[effective_wn])
             error = np.linalg.norm(wn_wise_error, ord=2)
             if OP.test_cases is None:
