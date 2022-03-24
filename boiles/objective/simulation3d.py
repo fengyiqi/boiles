@@ -10,18 +10,17 @@ from boiles.postprocessing.smoothness import do_weno5_si, symmetry, symmetry_x_f
 
 class Simulation3D(ObjectiveFunction):
 
-    def __init__(self,
-                 results_folder: str,
-                 result_filename: str = 'data_20.00*.h5',
-                 git: bool = False,
-                 shape: tuple = None
-                 ):
+    def __init__(
+            self,
+            file: str,
+            shape: tuple = None
+        ):
         self.dimension = 3
-        super(Simulation3D, self).__init__(results_folder, result_filename, git=git)
+        super(Simulation3D, self).__init__(file=file)
         self.shape = shape
         self.smoothness_threshold = 0.33
         if self.result_exit:
-            self.result, self.is_square = self.get_results(self.result_path)
+            self.result, self.is_square = self.get_results(self.file)
 
     def get_ordered_data(self, file, state: str, order):
         data = try_get_data(file, state, self.dimension)

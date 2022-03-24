@@ -46,32 +46,6 @@ def smoothness_indicator(x: list,
 
     return index[0] + 1
 
-
-def check_results_exist(folder: str,
-                        file_name: str):
-    r"""
-    If the simulation is divergent, there isn't a result file.
-    This function is used to check if the simulation is successful.
-    :return: if exist, return full file_name and True, else return [] and False
-    """
-    name = os.listdir(folder)
-    h5_name = [_name for _name in name if match(_name, file_name)]
-    if h5_name:
-        return h5_name[-1], True
-    else:
-        return [], False
-
-
-# IMPORTANT for git version, get data as
-
-# with h5py.File(file, "r") as data:
-#     density = np.array(data["simulation"]["density"])
-#     velocity_x = np.array(data["simulation"]["velocityX"])
-#     velocity_y = np.array(data["simulation"]["velocityY"])
-#     pressure = np.array(data["simulation"]["pressure"])
-#     cell_vertices = np.array(data["domain"]["cell_vertices"])
-#     vertex_coordinates = np.array(data["domain"]["vertex_coordinates"])
-
 def do_get_data(h5file, state: str, dimension: int):
     vel_keys = ["velocity_x", "velocity_y", "velocity_z"]
     vel_dict = {}
@@ -117,19 +91,11 @@ def get_coords_and_order(cell_vertices, vertex_coordinates, dimension):
 class ObjectiveFunction(object):
 
     def __init__(self,
-                 results_folder: str,
-                 result_filename: str,
-                 git: bool = False,
+                 file: str,
                  ):
-        self.results_folder = results_folder
-        # self.result_filename = result_filename
+        self.file = file
+        self.result_exit = os.path.exists(self.file)
 
-        self.result_filename, self.result_exit = check_results_exist(results_folder, result_filename)
-
-        if self.result_exit:
-            self.result_path = os.path.join(self.results_folder, self.result_filename)
-
-        self.reference: dict
 
     @abstractmethod
     def get_results(self, file):

@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 
-from .base import ObjectiveFunction
 from ..config.opt_problems import OP
 from ..test_cases.sod_60.sod_disper_60 import SodDisper60
 from ..test_cases.sod_60.sod_shock_60 import SodShock60
-import sympy
-from .base import try_get_data, get_coords_and_order
 from .simulation1d import Simulation1D
-import h5py
 import numpy as np
 
 index_group = {
@@ -21,19 +17,15 @@ index_group = {
 
 class Sod(Simulation1D):
 
-    def __init__(self,
-                 results_folder: str,
-                 result_filename: str = 'data_0.200*.h5',
-                 git: bool = False,
-                 plot: bool = True,
-                 ):
-
-        super(Sod, self).__init__(results_folder, result_filename, git=git)
+    def __init__(
+            self,
+            file: str
+        ):
+        super(Sod, self).__init__(file=file)
         if self.result_exit:
             self.cells = self.result['density'].shape[0]
             self.dx = 1 / self.cells
             self.reference = self.get_sod_reference_solution()
-            # self.get_all_gradients_difference()
 
     def get_sod_reference_solution(self, cells=None) -> dict:
         if cells is None:

@@ -48,12 +48,12 @@ def get_constrained_cand(model, acq_cand):
             if OC.dim_inputs == 2:
                 cons = {'type': 'ineq',
                         'fun': lambda x: ((x[0] - acq_x_float.squeeze()[0]) / factors[0]) ** 4 +
-                                         ((x[1] - acq_x_float.squeeze()[1]) / factors[1]) ** 4 - r ** 4}
+                                         ((x[1] - acq_x_float.squeeze()[1]) / factors[1]) ** 4 - radius ** 4}
             elif OC.dim_inputs == 3:
                 cons = {'type': 'ineq',
                         'fun': lambda x: ((x[0] - acq_x_float.squeeze()[0]) / factors[0]) ** 4 +
                                          ((x[1] - acq_x_float.squeeze()[1]) / factors[1]) ** 4 +
-                                         ((x[2] - acq_x_float.squeeze()[2]) / factors[2]) ** 4 - r ** 4}
+                                         ((x[2] - acq_x_float.squeeze()[2]) / factors[2]) ** 4 - radius ** 4}
             else:
                 raise Exception(f"Such dimension is invalid.")
 

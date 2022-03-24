@@ -1,13 +1,13 @@
 from numpy import *
 
-Ma = 2.37;
+Ma = 3.0
 #Ma = 1.25;
 #Ma = 1.782;
 gamma = 1.4;
 Pi = 0
 
-p_preS = 0.85714;
-rho_preS = 1.20;
+p_preS = 1.4;
+rho_preS = 1.0;
 sos_preS = sqrt(gamma * (p_preS+Pi) / rho_preS);
 print("sos: ", sos_preS)
 

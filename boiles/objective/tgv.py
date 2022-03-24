@@ -17,13 +17,11 @@ start_wn = 3
 
 class TaylorGreenVortex(Simulation3D):
 
-    def __init__(self,
-                 results_folder: str,
-                 result_filename: str = 'data_20.00*.h5',
-                 git: bool = False,
-                 plot: bool = False,
-                 ):
-        super(TaylorGreenVortex, self).__init__(results_folder, result_filename, git=git)
+    def __init__(
+            self,
+            file: str
+        ):
+        super(TaylorGreenVortex, self).__init__(file=file)
         self.center = 0
         self.realsize = 0
 

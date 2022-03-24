@@ -10,27 +10,20 @@ from boiles.postprocessing.smoothness import do_weno5_si, symmetry, symmetry_x_f
 
 class Simulation1D(ObjectiveFunction):
 
-    def __init__(self,
-                 results_folder: str,
-                 result_filename: str = 'data_1.00*.h5',
-                 git: bool = False,
-                 # shape: tuple = None
-                 ):
+    def __init__(
+            self,
+            file: str,
+        ):
         self.dimension = 1
-        super(Simulation1D, self).__init__(results_folder, result_filename, git=git)
-        # self.shape = shape
+        super(Simulation1D, self).__init__(file=file)
         self.smoothness_threshold = 0.33
         if self.result_exit:
-            self.result = self.get_results(self.result_path)
+            self.result = self.get_results(self.file)
 
     def get_ordered_data(self, file, state: str, order):
         data = try_get_data(file, state, self.dimension)
         if data is not None:
-            # if state == "velocity":
-            #     data["velocity_x"] = np.array(data)
-            # else:
             data = np.array(data[order])
-
             return data
         else:
             return None
@@ -42,10 +35,6 @@ class Simulation1D(ObjectiveFunction):
             vertex_coordinates = np.array(data["mesh_topology"]["cell_vertex_coordinates"])
 
         coords, order = get_coords_and_order(cell_vertices, vertex_coordinates, self.dimension)
-        # edge_cells_number: the cell number along each dimension
-        # edge_cells_number, is_integer = sympy.integer_nthroot(coords.shape[0], self.dimension)
-        # if self.shape is None:
-        #     self.shape = (edge_cells_number, edge_cells_number)
         density = self.get_ordered_data(file, "density", order)
         pressure = self.get_ordered_data(file, "pressure", order)
         velocity = self.get_ordered_data(file, "velocity", order)
@@ -58,6 +47,7 @@ class Simulation1D(ObjectiveFunction):
         thermal_conductivity = self.get_ordered_data(file, "thermal_conductivity", order)
 
         data_dict = {
+            "x_cell_center": coords,
             'density': density,
             'pressure': pressure,
             'velocity': velocity,

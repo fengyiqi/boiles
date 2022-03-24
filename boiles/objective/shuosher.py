@@ -10,27 +10,23 @@ import numpy as np
 from ..test_cases import *
 from .base import ObjectiveFunction, try_get_data, get_coords_and_order
 import sympy
+from .simulation1d import Simulation1D
 
 si_threshold = ShuBase200.si_threshold
 
 
-class ShuOsher(ObjectiveFunction):
+class ShuOsher(Simulation1D):
 
-    def __init__(self,
-                 results_folder: str,
-                 result_filename: str = 'data_1.800*.h5',
-                 git: bool = False,
-                 plot: bool = True
-                 ):
+    def __init__(
+            self,
+            file: str
+        ):
 
-        super(ShuOsher, self).__init__(results_folder, result_filename, git=git)
-        self.plot = plot
+        super(ShuOsher, self).__init__(file=file)
         self.dimension = 1
-        self.plot_savepath = results_folder
         self.disper_name = OP.test_cases[0].name
         self.shock_name = OP.test_cases[1].name
         if self.result_exit:
-            self.result = self.get_results(self.result_path)
             self.solution_filename = ShuBase200.ref_data
             self.reference_raw = self.get_results(self.solution_filename)
             self.reference = self.get_fvm_reference()
