@@ -94,10 +94,10 @@ class ObjectiveFunction(object):
                  file: str,
                  ):
         self.file_list = glob.glob(file)
-        assert not len(self.file_list) == 0, "No such .h5 file"
         assert not len(self.file_list) > 1, "Found multiple .h5 file"
-        self.result_exit = True if len(self.file_list) ==1 else False
-        self.file = self.file_list[0]
+        self.result_exit = True if len(self.file_list) == 1 else False
+        if self.result_exit:
+            self.file = self.file_list[0]
 
 
     @abstractmethod
