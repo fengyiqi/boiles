@@ -145,7 +145,7 @@ class Simulation3D(ObjectiveFunction):
         dataout[:, 0] = np.arange(0, len(dataout))
         dataout[:, 1] = EK_avsphr[0:len(dataout)]
 
-        np.savetxt(self.results_folder + self.result_filename[:-8] + '.csv', dataout, delimiter=",")
+        # np.savetxt(self.results_folder + self.result_filename[:-8] + '.csv', dataout, delimiter=",")
 
         return dataout
 
@@ -168,7 +168,7 @@ class Simulation3D(ObjectiveFunction):
         spectrum_data = self._create_spectrum()
         spectrum_ref  = self._calculate_reference(spectrum_data)
         fig, ax = plt.subplots(dpi=150)
-        ax.set_title(f"Kinetic Energy Spectrum at t={self.result_filename[5:-8]}")
+        ax.set_title(f"Kinetic Energy Spectrum")
         ax.set_xlabel(r"k (wavenumber)")
         ax.set_ylabel(r"TKE of the k$^{th}$ wavenumber")
 
