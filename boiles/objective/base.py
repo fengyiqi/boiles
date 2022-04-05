@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from fnmatch import fnmatchcase as match
 import matplotlib.pyplot as plt
 import os
 import h5py
 from abc import abstractmethod
+import glob
 
 
 # from mytools.opt_config import *
@@ -93,8 +93,11 @@ class ObjectiveFunction(object):
     def __init__(self,
                  file: str,
                  ):
-        self.file = file
-        self.result_exit = os.path.exists(self.file)
+        self.file_list = glob.glob(file)
+        assert not len(self.file_list) > 1, "Found multiple .h5 file"
+        self.result_exit = True if len(self.file_list) == 1 else False
+        if self.result_exit:
+            self.file = self.file_list[0]
 
 
     @abstractmethod

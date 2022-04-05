@@ -77,10 +77,10 @@ class Simulation2D(ObjectiveFunction):
 
         return data_dict, is_integer
 
-    def smoothness(self, threshold=None):
+    def smoothness(self, threshold=None, property="numerical_dissipation_rate"):
         if threshold is None:
             threshold = self.smoothness_threshold
-        return internal_smoothness(self.result["numerical_dissipation_rate"], threshold=threshold)
+        return internal_smoothness(self.result[property], threshold=threshold)
 
     def truncation_errors(self):
         r"""
@@ -93,6 +93,15 @@ class Simulation2D(ObjectiveFunction):
         abs_error = np.abs(num_rate).sum()
         return dissipation, dispersion, true_error, abs_error
 
+    def plot(self, prop: str):
+        plt.figure(figsize=(5, 4), dpi=100)
+        plt.imshow(self.result[prop], origin="lower")
+        plt.title(prop)
+        plt.colorbar()
+        plt.tight_layout()
+        plt.show()
+
+
     def _create_spectrum(self):
         if not self.is_square:
             raise RuntimeError("For non-square domain, no spectrum can be computed!")
@@ -101,7 +110,7 @@ class Simulation2D(ObjectiveFunction):
         N = self.shape[0]
         # U0 = 33.13148
         U0 = 1.0
-        Figs_Path = self.results_folder
+        # Figs_Path = self.results_folder
 
         eps = 1e-50  # to void log(0)
 
@@ -141,7 +150,7 @@ class Simulation2D(ObjectiveFunction):
         dataout[:, 0] = np.arange(0, len(dataout))
         dataout[:, 1] = EK_avsphr[0:len(dataout)]
 
-        np.savetxt(Figs_Path + self.result_filename[:-8] + '.csv', dataout, delimiter=",")
+        # np.savetxt(Figs_Path + self.result_filename[:-8] + '.csv', dataout, delimiter=",")
 
         return dataout
 
@@ -164,7 +173,7 @@ class Simulation2D(ObjectiveFunction):
         spectrum_data = self._create_spectrum()
         spectrum_ref  = self._calculate_reference(spectrum_data)
         fig, ax = plt.subplots(dpi=150)
-        ax.set_title(f"Kinetic Energy Spectrum at t={self.result_filename[5:-8]}")
+        ax.set_title(f"Kinetic Energy Spectrum")
         ax.set_xlabel(r"k (wavenumber)")
         ax.set_ylabel(r"TKE of the k$^{th}$ wavenumber")
 
