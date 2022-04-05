@@ -93,6 +93,15 @@ class Simulation2D(ObjectiveFunction):
         abs_error = np.abs(num_rate).sum()
         return dissipation, dispersion, true_error, abs_error
 
+    def plot(self, prop: str):
+        plt.figure(figsize=(5, 4), dpi=100)
+        plt.imshow(self.result[prop], origin="lower")
+        plt.title(prop)
+        plt.colorbar()
+        plt.tight_layout()
+        plt.show()
+
+
     def _create_spectrum(self):
         if not self.is_square:
             raise RuntimeError("For non-square domain, no spectrum can be computed!")
