@@ -216,7 +216,8 @@ def internal_smoothness(value, threshold=0.333):
             stencil[3] = value[x + 2, y + 3]
             stencil[4] = value[x + 2, y + 4]
             _, a2_weno5_y, a3_weno5_y = do_weno5_si(stencil)
-            si_buffer[x, y] = min([a2_weno5_x, a3_weno5_x, a2_weno5_y, a3_weno5_y])
+            # si_buffer[x, y] = min([a2_weno5_x, a3_weno5_x, a2_weno5_y, a3_weno5_y])
+            si_buffer[x, y] = min([a2_weno5_x, a2_weno5_y])
     si_regular = np.where(si_buffer > threshold, 1, 0)
     score = si_regular.sum() / (x_size * y_size)
     return si_regular, score
