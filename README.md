@@ -14,6 +14,8 @@ ALPACA, is named by "Adaptive Level-set Parallel Code", a multiresolution compre
 
 Other higher versions may work but have not been tested yet. 
 
+> Note: the most recent updates can be found in *basic* branch
+
 ## Reading Materials
 
 ### Gaussian Processes
