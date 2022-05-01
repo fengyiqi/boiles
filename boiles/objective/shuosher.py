@@ -20,7 +20,7 @@ class ShuOsher(Simulation1D):
     def __init__(
             self,
             file: str
-        ):
+    ):
 
         super(ShuOsher, self).__init__(file=file)
         self.dimension = 1
