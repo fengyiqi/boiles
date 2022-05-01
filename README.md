@@ -12,7 +12,7 @@ ALPACA, is named by "Adaptive Level-set Parallel Code", a multiresolution compre
 - torch = 1.10.1
 - Python >= 3.8
 
-Other higher versions may work but have not been tested. 
+Other higher versions may work but have not been tested yet. 
 
 ## Reading Materials
 
@@ -43,15 +43,25 @@ Learning resources may include
 
 We perform Bayesian optimization through [Ax](https://ax.dev/), a platform for sequential experimentation. Practice [Ax](https://ax.dev/) with:
 
-- [*Multi-Objective Optimization Ax API*](https://ax.dev/tutorials/multiobjective_optimization.html)
+- [*Using a custom botorch model with Ax*](https://botorch.org/v/0.6.0/tutorials/custom_botorch_model_in_ax)
+- [*Multi-Objective Optimization Ax API*](https://ax.dev/versions/0.2.3/tutorials/multiobjective_optimization.html)
 
 or practice [botorch](https://botorch.org/) with:
 
-- [*Noisy, Parallel, Multi-Objective BO in BoTorch with qEHVI, qNEHVI, and qNParEGO*](https://botorch.org/tutorials/multi_objective_bo)
+- [*Noisy, Parallel, Multi-Objective BO in BoTorch with qEHVI, qNEHVI, and qNParEGO*](https://botorch.org/v/0.6.0/tutorials/multi_objective_bo)
+
+> Note: currently we stick to Ax==0.2.3 and Botorch==0.6.0
 
 You may find the expected hypervolume improvement (EHVI) algorithm that is used for multi-objective BO in above tutorials. Unfortunately there are little resources explaining EHVI well. You may learn it from 
 
 - [Multi-Objective Bayesian Global Optimization using expected hypervolume improvement gradient](https://www.sciencedirect.com/science/article/pii/S2210650217307861)
+
+Also see my tutorials:
+
+- [*A modification tutorial of Using a custom botorch model with Ax*](./tutorial/01_basic_usage.ipynb)
+- [*Optimizing TENO5 with Sod's Shock Tube*](./tutorial/02_sobo_teno5_sod_shock_tube.ipynb)
+
+> Note: *Optimizing TENO5 with Sod's Shock Tube* requires ALPACA installed.
 
 ### Optimization Problem: Nonlinear Reconstruction Scheme
 
