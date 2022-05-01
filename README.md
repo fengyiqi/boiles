@@ -2,7 +2,17 @@
 Bayesian optimization for implicit Large Eddy Simulation schemes, as well as for shock-capturing scheme optimization.
 
 This repo is a an interface between ALPACA and Bayesian optimization tools ([Ax](https://ax.dev/), [botorch](https://botorch.org/), [gpytorch](https://gpytorch.ai/) ...).
-ALPACA, is named by "Adaptive Level-set Parallel Code". It is a multiresolution compressible multiphase flow solver developed at Prof. Adams' [Chair of Aerodynamics and Fluid Mechanics (AER)](https://www.mw.tum.de/en/aer/home/), [Technical University of Munich](https://www.tum.de/en/).
+ALPACA, is named by "Adaptive Level-set Parallel Code", a multiresolution compressible multiphase flow solver developed at Prof. Adams' [Chair of Aerodynamics and Fluid Mechanics (AER)](https://www.mw.tum.de/en/aer/home/), [Technical University of Munich](https://www.tum.de/en/).
+
+## Compatibility
+
+- Ax-platform = 0.2.5.1
+- botorch = 0.6.4
+- gpytorch = 1.6.0
+- torch = 1.10.1
+- Python >= 3.8
+
+Other higher versions may work but have not been tested. 
 
 ## Reading Materials
 
