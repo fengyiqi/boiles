@@ -6,8 +6,8 @@ ALPACA, is named by "Adaptive Level-set Parallel Code", a multiresolution compre
 
 ## Compatibility
 
-- Ax-platform = 0.2.5.1
-- botorch = 0.6.4
+- Ax-platform = 0.2.3
+- botorch = 0.6.0
 - gpytorch = 1.6.0
 - torch = 1.10.1
 - Python >= 3.8
