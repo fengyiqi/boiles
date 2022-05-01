@@ -13,7 +13,7 @@ class Simulation1D(ObjectiveFunction):
     def __init__(
             self,
             file: str,
-        ):
+    ):
         self.dimension = 1
         super(Simulation1D, self).__init__(file=file)
         self.smoothness_threshold = 0.33
@@ -47,7 +47,7 @@ class Simulation1D(ObjectiveFunction):
         thermal_conductivity = self.get_ordered_data(file, "thermal_conductivity", order)
 
         data_dict = {
-            "x_cell_center": coords,
+            "x_cell_center": coords[:, 0],
             'density': density,
             'pressure': pressure,
             'velocity': velocity,
