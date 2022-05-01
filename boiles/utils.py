@@ -194,14 +194,14 @@ def save_model_state(ehvi_model: TorchModelBridge, iteration):
         torch.save(model_dict, f'{save_path}/{model.name}_model_state_{iteration}.pth')
 
 
-def save_single_model_state(ei_model: TorchModelBridge, iteration):
+def save_single_model_state(ei_model: TorchModelBridge, iteration, name):
 
     save_path = f'{OC.case_folder}/model_state'
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
     model_dict = ei_model.model.model.state_dict()
-    torch.save(model_dict, f'{save_path}/{ei_model.model.model.name}_model_state_{iteration}.pth')
+    torch.save(model_dict, f'{save_path}/{name}_model_state_{iteration}.pth')
 
 
 def log(string: str, print_to_terminal=True):

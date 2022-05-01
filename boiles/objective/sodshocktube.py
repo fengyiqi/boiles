@@ -20,7 +20,7 @@ class Sod(Simulation1D):
     def __init__(
             self,
             file: str
-        ):
+    ):
         super(Sod, self).__init__(file=file)
         if self.result_exit:
             self.cells = self.result['density'].shape[0]
@@ -85,8 +85,6 @@ class Sod(Simulation1D):
         results = np.delete(self.result[key], index_group[self.cells][key])
         diff = abs(results - ref)
         return np.linalg.norm(diff, ord=2)
-
-
 
     def objective_disper(self, prop="density"):
 
