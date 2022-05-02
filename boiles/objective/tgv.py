@@ -8,7 +8,7 @@ import sympy
 from ..config.opt_config import OC
 from ..config.opt_problems import OP
 from ..test_cases.tgv import TGV
-from ..test_cases.tgv import TGV
+from ..test_cases.tgv_teno5 import TGVTENO5
 from .simulation3d import Simulation3D
 import numpy as np
 
@@ -20,7 +20,7 @@ class TaylorGreenVortex(Simulation3D):
     def __init__(
             self,
             file: str
-        ):
+    ):
         super(TaylorGreenVortex, self).__init__(file=file)
         self.center = 0
         self.realsize = 0
@@ -32,12 +32,10 @@ class TaylorGreenVortex(Simulation3D):
         """
 
         if OP.test_cases is not None:
-            upper_bound = OP.test_cases[-1].highest_error_from_initial
+            upper_bound = TGVTENO5.highest_error_from_initial
         else:
             upper_bound = np.inf
-
         if self.result_exit:
-
             spectrum_data = self._create_spectrum()
             spectrum_ref = self._calculate_reference(spectrum_data)
             effective_wn = slice(start_wn, self.realsize + 1)
