@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Paul Woodward and Phillip Colella. "The numerical simulation of two-dimensional fluid flow with strong shocks." -->
-<!-- Journal of Computational Physics 54.1 (1984): 115-173 -->
-<!-- Section IV/3b - A Mach 3 Wind Tunnel With a Step -->
+<!-- "Comparison of Several Difference Schemes on 1D and 2D Test Problems for the Euler Equations", Liska, Wendroff, 2003:
+4.7 Implosion problem -->
 <configuration>
     <domain>
-        <!-- size of a single node on level 0 -->
-        <nodeSize> 2.0  </nodeSize>
+        <nodeSize> 2.5  </nodeSize>
 
         <!-- number of nodes per dimension-->
         <nodeRatio>
-            <x> 5 </x>  <!-- IC = 20 for standart resolution -->
+            <x> 4 </x>  <!-- IC = 20 for standart resolution -->
             <y> 1 </y>
             <z> 1  </z>
         </nodeRatio>
@@ -29,6 +27,7 @@
                     <velocityY>0.0</velocityY>
                     <velocityZ>0.0</velocityZ>
                     <pressure>10.33333</pressure>
+                    <temperature>0</temperature>
                 </valuesWest>
                 <east>fixedValue</east>
                 <valuesEast>
@@ -37,6 +36,7 @@
                     <velocityY>0.0</velocityY>
                     <velocityZ>0.0</velocityZ>
                     <pressure>1.0</pressure>
+                    <temperature>0</temperature>
                 </valuesEast>
                 <south>symmetry</south>
                 <north>symmetry</north>
@@ -45,10 +45,6 @@
             </material>
 
             <levelSet>
-                <!--types of level-set boundary conditions:
-                zeroGradient
-                symmetry
-                -->
                 <west>   symmetry </west>
                 <east>   symmetry </east>
                 <south>  symmetry </south>
@@ -78,6 +74,14 @@
             }
             </material1>
 
+            <material2>
+                density := 1.0;
+                velocityX := 0.0;
+                velocityY := 0.0;
+                velocityZ := 0.0;
+                pressure := 1.0;
+            </material2>
+
             <levelSet1>
                 phi := 1.0;
             </levelSet1>
@@ -90,14 +94,14 @@
       <numberOfMaterials> 1   </numberOfMaterials>
       <material1>
          <equationOfState>
-            <type> StiffenedGasSafe </type>
+            <type> StiffenedGas </type>
             <gamma>               1.4   </gamma>
             <A>                   0.0   </A>
             <B>                   0.0   </B>
             <C>                   0.0   </C>
             <rho0>                1.2   </rho0>
-            <specificGasConstant> 1.0   </specificGasConstant>
-             <backgroundPressure> 0.0   </backgroundPressure>
+	    <specificGasConstant> 0.0   </specificGasConstant>
+	    <backgroundPressure>  0.0   </backgroundPressure>
 	      </equationOfState>
          <properties>
             <specificHeatCapacity> 0.0 </specificHeatCapacity>
@@ -106,18 +110,25 @@
             <bulkViscosity> 0.0 </bulkViscosity>
          </properties>
       </material1>
-
    </materials>
 
-    <multiResolution>
-        <maximumLevel> 0 </maximumLevel>
+    <sourceTerms>
+        <gravity>
+            <x> 0 </x>
+            <y> 0 </y>
+            <z> 0 </z>
+        </gravity>
+    </sourceTerms>
 
-        <refinementCriterion>
-            <epsilonReference>    0.000000000001 </epsilonReference>
-            <!-- user_level_of_epsilon_ref: allowed values [0-12] -->
-            <levelOfEpsilonReference> 2 </levelOfEpsilonReference>
-        </refinementCriterion>
-    </multiResolution>
+   <multiResolution>
+       <maximumLevel> 0 </maximumLevel>
+
+       <refinementCriterion>
+           <epsilonReference>    0.01 </epsilonReference>
+           <!-- user_level_of_epsilon_ref: allowed values [0-12] -->
+           <levelOfEpsilonReference> 0  </levelOfEpsilonReference>
+       </refinementCriterion>
+   </multiResolution>
 
    <timeControl>
       <startTime> 0.0  </startTime>
@@ -138,7 +149,7 @@
          <fileName> inputfile/restart/restart_***.h5 </fileName>
       </restore>
       <snapshots>
-         <type> Interval </type> <!-- Off, Stamps, Interval OR Stamps Interval -->
+         <type> Off </type> <!-- Off, Stamps, Interval OR Stamps Interval -->
          <interval> 3600 </interval> <!-- in wall seconds -->
          <intervalsToKeep> 2 </intervalsToKeep> 
       </snapshots>
