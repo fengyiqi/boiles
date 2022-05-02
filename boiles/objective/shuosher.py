@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
 
-from .base import ObjectiveFunction, smoothness_indicator
+from .base import smoothness_indicator
 from more_itertools import chunked
 import more_itertools as mit
-import matplotlib.pyplot as plt
-from ..config.opt_problems import *
-import h5py
 import numpy as np
 from ..test_cases import *
-from .base import ObjectiveFunction, try_get_data, get_coords_and_order
-import sympy
 from .simulation1d import Simulation1D
+import json
 
 si_threshold = ShuBase200.si_threshold
+SHUOSHER_REF = "./shuosher_ref.json"
+
+
+def read_shuosher_ref():
+    with open(SHUOSHER_REF, "r") as file:
+        data = json.load(file)
+    for key, value in data.items():
+        data[key] = np.array(value)
+    return data
 
 
 class ShuOsher(Simulation1D):
@@ -24,51 +29,13 @@ class ShuOsher(Simulation1D):
 
         super(ShuOsher, self).__init__(file=file)
         self.dimension = 1
-        self.disper_name = OP.test_cases[0].name
-        self.shock_name = OP.test_cases[1].name
+        self.disper_name = "disper"
+        self.shock_name = "shock"
+        self.plot = False
+        self.plot_savepath = "_"
         if self.result_exit:
-            self.solution_filename = ShuBase200.ref_data
-            self.reference_raw = self.get_results(self.solution_filename)
+            self.reference_raw = read_shuosher_ref()
             self.reference = self.get_fvm_reference()
-
-    def get_ordered_data(self, file, state: str, order, edge_cells):
-        data = try_get_data(file, state, self.dimension)
-        if data is not None:
-            data = np.array(data[order])
-            return data
-        else:
-            return None
-
-    def get_results(self, file):
-
-        with h5py.File(file, "r") as data:
-            cell_vertices = np.array(data["mesh_topology"]["cell_vertex_IDs"])
-            vertex_coordinates = np.array(data["mesh_topology"]["cell_vertex_coordinates"])
-
-        coords, order = get_coords_and_order(cell_vertices, vertex_coordinates, self.dimension)
-        # edge_cells_number: the cell number along each dimension
-        edge_cells_number, is_integer = sympy.integer_nthroot(coords.shape[0], self.dimension)
-
-        x = coords[:, 0]
-        density = self.get_ordered_data(file, "density", order, edge_cells_number)
-        pressure = self.get_ordered_data(file, "pressure", order, edge_cells_number)
-        velocity = self.get_ordered_data(file, "velocity", order, edge_cells_number)
-        effective_dissipation_rate = self.get_ordered_data(file, "effective_dissipation_rate", order, edge_cells_number)
-        numerical_dissipation_rate = self.get_ordered_data(file, "numerical_dissipation_rate", order, edge_cells_number)
-        vorticity = self.get_ordered_data(file, "vorticity", order, edge_cells_number)
-
-        data_dict = {
-            "x": x,
-            'density': density,
-            'pressure': pressure,
-            'velocity': velocity,
-            'vorticity': vorticity,
-            'coords': coords,
-            'effective_dissipation_rate': effective_dissipation_rate,
-            'numerical_dissipation_rate': numerical_dissipation_rate
-        }
-
-        return data_dict
 
     def get_fvm_reference(self):
         r"""
@@ -134,7 +101,7 @@ class ShuOsher(Simulation1D):
         Return a clamped error
         :return: error and simulation state.
         """
-        upper_bound = OP.test_cases[1].highest_error_from_initial
+        upper_bound = ShuShock200.highest_error_from_initial
         if self.result_exit:
             real_error = self._shock_error(key, threshold=threshold)
             clipped_error = real_error if real_error <= upper_bound else upper_bound
@@ -175,7 +142,7 @@ class ShuOsher(Simulation1D):
         Return a clamped error
         :return: error and simulation state.
         """
-        upper_bound = OP.test_cases[0].highest_error_from_initial
+        upper_bound = ShuDisper200.highest_error_from_initial
         if self.result_exit:
             if gradient_diff:
                 real_error = self._disper_error(key, ord=ord, threshold=threshold)
