@@ -7,13 +7,13 @@ import numpy as np
 from ..test_cases import *
 from .simulation1d import Simulation1D
 import json
+import importlib.resources
 
 si_threshold = ShuBase200.si_threshold
-SHUOSHER_REF = "./shuosher_ref.json"
 
 
 def read_shuosher_ref():
-    with open(SHUOSHER_REF, "r") as file:
+    with importlib.resources.open_text("boiles", "shuosher_ref.json") as file:
         data = json.load(file)
     for key, value in data.items():
         data[key] = np.array(value)
