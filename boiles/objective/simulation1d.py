@@ -45,6 +45,7 @@ class Simulation1D(ObjectiveFunction):
         schlieren = self.get_ordered_data(file, "schlieren", order)
         temperature = self.get_ordered_data(file, "temperature", order)
         thermal_conductivity = self.get_ordered_data(file, "thermal_conductivity", order)
+        entropy = np.log(pressure / (density ** 1.4))
 
         data_dict = {
             "x_cell_center": coords[:, 0],
@@ -58,7 +59,8 @@ class Simulation1D(ObjectiveFunction):
             'kinetic_energy': kinetic_energy,
             'schlieren': schlieren,
             'temperature': temperature,
-            'thermal_conductivity': thermal_conductivity
+            'thermal_conductivity': thermal_conductivity,
+            'entropy': entropy
         }
 
         return data_dict

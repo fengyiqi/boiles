@@ -17,6 +17,7 @@ def read_shuosher_ref():
         data = json.load(file)
     for key, value in data.items():
         data[key] = np.array(value)
+    data['entropy'] = np.log(data["pressure"] / (data["density"] ** 1.4))
     return data
 
 
