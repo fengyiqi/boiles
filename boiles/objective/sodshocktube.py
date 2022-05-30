@@ -7,6 +7,11 @@ from .simulation1d import Simulation1D
 import numpy as np
 
 index_group = {
+    40: {
+        "density": [26, 27, 33, 34],
+        "pressure": [33, 34],
+        "velocity": [33, 34]
+    },
     60: {
         "density": [40, 41, 50, 51],
         "pressure": [50, 51],
@@ -80,9 +85,14 @@ class Sod(Simulation1D):
 
         # self.disper = np.linalg.norm(g_diff, ord=ord)
 
-    def get_all_value_difference(self, key='density'):
-        ref = np.delete(self.get_sod_reference_solution()[key], index_group[self.cells][key])
-        results = np.delete(self.result[key], index_group[self.cells][key])
+    def get_all_value_difference(self, key='density', exclude_shocks=True):
+
+        if exclude_shocks:
+            ref = np.delete(self.get_sod_reference_solution(self.cells)[key], index_group[self.cells][key])
+            results = np.delete(self.result[key], index_group[self.cells][key])
+        else:
+            ref = self.get_sod_reference_solution(self.cells)[key]
+            results = self.result[key]
         diff = abs(results - ref)
         return np.linalg.norm(diff, ord=2)
 

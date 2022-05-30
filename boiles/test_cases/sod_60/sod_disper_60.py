@@ -1,12 +1,18 @@
 from ..utils import *
 from .sod_base_60 import Sod60
 
-# for Roe solver
+# for 40 cells Roe
 bound = {
-    "density": (0.05176, 0.32190),
-    "pressure": (0.06333, 0.29718),
-    "velocity": (0.09284, 0.96046)
+    "density": (0.06843, 0.37597),
+    "pressure": (0.083628, 0.35652),
+    "velocity": (0.10988, 1.19042)
 }
+# for Roe solver
+# bound = {
+#     "density": (0.05176, 0.32190),
+#     "pressure": (0.06333, 0.29718),
+#     "velocity": (0.09284, 0.96046)
+# }
 # ord=1
 # bound = {
 #     "density": (0.23053219900762575, 1.1310494069220383),
@@ -29,7 +35,7 @@ class SodDisper60(Sod60):
 
     name = "disper"
     lowest_error_from_initial = 0
-    highest_error_from_initial = 0.6
+    highest_error_from_initial = 1
     ref_point = get_ref_point(lowest_error_from_initial, highest_error_from_initial, 0.5)
     # sensitivity_control = "noise_level"
     # sensitivity_control = "prior_distribution"
