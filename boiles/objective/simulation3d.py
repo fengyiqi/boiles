@@ -164,13 +164,13 @@ class Simulation3D(ObjectiveFunction):
         reference = A * np.power(spectrum[:, 0], -5 / 3)
         return reference
 
-    def plot_tke(self, save_path: str = None):
+    def plot_tke(self, plot_reference = False, y_lower: float = 1e-15, y_upper = 1, save_path: str = None, grid=False):
         spectrum_data = self._create_spectrum()
         spectrum_ref  = self._calculate_reference(spectrum_data)
         fig, ax = plt.subplots(dpi=150)
-        ax.set_title(f"Kinetic Energy Spectrum")
-        ax.set_xlabel(r"k (wavenumber)")
-        ax.set_ylabel(r"TKE of the k$^{th}$ wavenumber")
+        # ax.set_title(f"Kinetic Energy Spectrum")
+        ax.set_xlabel(r"$k$")
+        ax.set_ylabel(r"$E(k)$")
 
         ax.loglog(np.arange(0, self.realsize),
                   spectrum_data[0:self.realsize, 1],
@@ -182,12 +182,15 @@ class Simulation3D(ObjectiveFunction):
                   'k--',
                   linewidth=0.8,
                   label=f'$k\geq{self.realsize}$')
-        ax.loglog(spectrum_data[:, 0], spectrum_ref, 'r', linewidth=0.8, label='$ref$')
+        if plot_reference:
+            ax.loglog(spectrum_data[:, 0], spectrum_ref, 'r', linewidth=0.8, label='$ref$')
         ax.legend(loc='lower left')
-        ax.set_ylim(10 ** -15, 1)
-        ax.grid(which='both')
+        ax.set_ylim(y_lower, y_upper)
+        if grid:
+            ax.grid(which='both')
         if save_path is not None:
             fig.savefig(save_path)
+        plt.tight_layout()
         plt.show()
         plt.close(fig)
 
