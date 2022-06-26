@@ -104,7 +104,7 @@ def multistart_minimize(fun, model, constraints_):
     return np.array(x_array)[sort_index]
 
 
-# Upper Bound Confidence acquisition function
+# Upper Confidence Bound  acquisition function
 def fun(x, model):
     X = torch.tensor([x])
     posterior = model.posterior(X=X)
