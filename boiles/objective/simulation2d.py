@@ -14,7 +14,7 @@ class Simulation2D(ObjectiveFunction):
             self,
             file: str,
             shape: tuple = None
-        ):
+    ):
         self.dimension = 2
         super(Simulation2D, self).__init__(file=file)
         self.shape = shape
@@ -63,7 +63,8 @@ class Simulation2D(ObjectiveFunction):
         data_dict = {
             'density': density,
             'pressure': pressure,
-            'velocity': velocity,
+            'velocity_x': velocity["velocity_x"],
+            'velocity_y': velocity["velocity_y"],
             'vorticity': vorticity,
             'coords': coords,
             'effective_dissipation_rate': effective_dissipation_rate,
@@ -105,8 +106,8 @@ class Simulation2D(ObjectiveFunction):
     def _create_spectrum(self):
         if not self.is_square:
             raise RuntimeError("For non-square domain, no spectrum can be computed!")
-        velocity_x = self.result['velocity']['velocity_x']
-        velocity_y = self.result['velocity']['velocity_y']
+        velocity_x = self.result['velocity_x']
+        velocity_y = self.result['velocity_y']
         N = self.shape[0]
         # U0 = 33.13148
         U0 = 1.0

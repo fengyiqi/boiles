@@ -62,7 +62,9 @@ class Simulation3D(ObjectiveFunction):
         data_dict = {
             'density': density,
             'pressure': pressure,
-            'velocity': velocity,
+            'velocity_x': velocity["velocity_x"],
+            'velocity_y': velocity["velocity_y"],
+            'velocity_z': velocity["velocity_z"],
             'vorticity': vorticity,
             'coords': coords,
             'effective_dissipation_rate': effective_dissipation_rate,
@@ -90,9 +92,9 @@ class Simulation3D(ObjectiveFunction):
     def _create_spectrum(self):
         if not self.is_square:
             raise RuntimeError("For non-square domain, no spectrum can be computed!")
-        velocity_x = self.result['velocity']['velocity_x']
-        velocity_y = self.result['velocity']['velocity_y']
-        velocity_z = self.result['velocity']['velocity_z']
+        velocity_x = self.result['velocity_x']
+        velocity_y = self.result['velocity_y']
+        velocity_z = self.result['velocity_z']
         N = self.shape[0]
         # U0 = 33.13148
         U0 = 1.0
@@ -191,6 +193,6 @@ class Simulation3D(ObjectiveFunction):
         if save_path is not None:
             fig.savefig(save_path)
         plt.tight_layout()
-        plt.show()
-        plt.close(fig)
+        # plt.show()
+        # plt.close(fig)
 
