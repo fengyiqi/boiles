@@ -53,6 +53,7 @@ class Simulation3D(ObjectiveFunction):
         kinetic_energy = 0.5 * density * (velocity["velocity_x"]**2 + velocity["velocity_y"]**2 + velocity["velocity_z"]**2)
         effective_dissipation_rate = self.get_ordered_data(file, "effective_dissipation_rate", order)
         numerical_dissipation_rate = self.get_ordered_data(file, "numerical_dissipation_rate", order)
+        highorder_dissipation_rate = self.get_ordered_data(file, "highorder_dissipation_rate", order)
         vorticity = self.get_ordered_data(file, "vorticity", order)
         ducros = self.get_ordered_data(file, "ducros", order)
         schlieren = self.get_ordered_data(file, "schlieren", order)
@@ -69,6 +70,7 @@ class Simulation3D(ObjectiveFunction):
             'coords': coords,
             'effective_dissipation_rate': effective_dissipation_rate,
             'numerical_dissipation_rate': numerical_dissipation_rate,
+            'highorder_dissipation_rate': highorder_dissipation_rate,
             'ducros': ducros,
             'kinetic_energy': kinetic_energy,
             'schlieren': schlieren,

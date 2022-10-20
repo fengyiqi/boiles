@@ -51,9 +51,11 @@ class Simulation2D(ObjectiveFunction):
         density = self.get_ordered_data(file, "density", order)
         pressure = self.get_ordered_data(file, "pressure", order)
         velocity = self.get_ordered_data(file, "velocity", order)
+        energy = self.get_ordered_data(file, "energy", order)
         kinetic_energy = 0.5 * density * (velocity["velocity_x"]**2 + velocity["velocity_y"]**2)
         effective_dissipation_rate = self.get_ordered_data(file, "effective_dissipation_rate", order)
         numerical_dissipation_rate = self.get_ordered_data(file, "numerical_dissipation_rate", order)
+        highorder_dissipation_rate = self.get_ordered_data(file, "highorder_dissipation_rate", order)
         vorticity = self.get_ordered_data(file, "vorticity", order)
         ducros = self.get_ordered_data(file, "ducros", order)
         schlieren = self.get_ordered_data(file, "schlieren", order)
@@ -65,10 +67,12 @@ class Simulation2D(ObjectiveFunction):
             'pressure': pressure,
             'velocity_x': velocity["velocity_x"],
             'velocity_y': velocity["velocity_y"],
+            'energy': energy,
             'vorticity': vorticity,
             'coords': coords,
             'effective_dissipation_rate': effective_dissipation_rate,
             'numerical_dissipation_rate': numerical_dissipation_rate,
+            'highorder_dissipation_rate': highorder_dissipation_rate,
             'ducros': ducros,
             'kinetic_energy': kinetic_energy,
             'schlieren': schlieren,
@@ -103,11 +107,11 @@ class Simulation2D(ObjectiveFunction):
         plt.show()
 
 
-    def _create_spectrum(self):
+    def _create_spectrum(self, density=False):
         if not self.is_square:
             raise RuntimeError("For non-square domain, no spectrum can be computed!")
-        velocity_x = self.result['velocity_x']
-        velocity_y = self.result['velocity_y']
+        velocity_x = self.result['velocity_x'] * np.sqrt(self.result["density"]) if density else self.result['velocity_x']
+        velocity_y = self.result['velocity_y'] * np.sqrt(self.result["density"]) if density else self.result['velocity_y']
         N = self.shape[0]
         # U0 = 33.13148
         U0 = 1.0
@@ -154,6 +158,7 @@ class Simulation2D(ObjectiveFunction):
         # np.savetxt(Figs_Path + self.result_filename[:-8] + '.csv', dataout, delimiter=",")
 
         return dataout
+        
 
     def _calculate_A(self, spectrum):
 

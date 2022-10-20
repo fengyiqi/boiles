@@ -41,6 +41,8 @@ class Simulation1D(ObjectiveFunction):
         kinetic_energy = 0.5 * density * velocity**2
         effective_dissipation_rate = self.get_ordered_data(file, "effective_dissipation_rate", order)
         numerical_dissipation_rate = self.get_ordered_data(file, "numerical_dissipation_rate", order)
+        highorder_dissipation_rate = self.get_ordered_data(file, "highorder_dissipation_rate", order)
+        dissipation_function = self.get_ordered_data(file, "dissipation_function", order)
         ducros = self.get_ordered_data(file, "ducros", order)
         schlieren = self.get_ordered_data(file, "schlieren", order)
         temperature = self.get_ordered_data(file, "temperature", order)
@@ -55,6 +57,8 @@ class Simulation1D(ObjectiveFunction):
             'coords': coords,
             'effective_dissipation_rate': effective_dissipation_rate,
             'numerical_dissipation_rate': numerical_dissipation_rate,
+            'highorder_dissipation_rate': highorder_dissipation_rate,
+            'dissipation_function': dissipation_function,
             'ducros': ducros,
             'kinetic_energy': kinetic_energy,
             'schlieren': schlieren,
