@@ -1,10 +1,3 @@
-<style>
-img{
-    width: 80%;
-    padding-left: 10%;
-}
-</style>
-
 # Test Cases
 
 <!-- ## ALPACA configuration -->
@@ -24,7 +17,7 @@ src/user_specifications/stencil.h
 constexpr ReconstructionStencils reconstruction_stencil = ReconstructionStencils::WENO7;
 ```
 
-**The figures are only for demonstration. The case are simulated with very high resolution. For benchmark testing, a lower resolution configuration is preferred, e.g. 64 cells.**
+**The figures are only for demonstration. The cases are simulated with a high resolution. For benchmark testing, a lower resolution configuration is preferred, e.g. 64 cells.**
 
 
 
@@ -34,11 +27,17 @@ constexpr ReconstructionStencils reconstruction_stencil = ReconstructionStencils
 
 ## 2D implosion
 
+![](pics/implosion.jpg)
+
 ## 2D Riemann Problem
 
-The vortical structures are noticeable if the resolution is $256\times 256$ and even higher
+The vortical structures are noticeable if the resolution is [256, 256] and even higher
 
 ![](pics/2d_riemann.jpg)
+
+## Kelvin–Helmholtz instability
+
+![](pics/kh.jpg)
 
 ## Taylor-Green vortex
 
