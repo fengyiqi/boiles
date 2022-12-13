@@ -23,19 +23,29 @@ constexpr ReconstructionStencils reconstruction_stencil = ReconstructionStencils
 
 ## Lax shock-tube problem
 
+Refer to Lin's TENO5 paper.
+
 ![](pics/lax.jpg)
 
 ## 2D implosion
+
+Refer to "Numerical symmetry-perserving techniques for low-dissipation shock-capturing schemes" in Nico's thesis.
 
 ![](pics/implosion.jpg)
 
 ## 2D Riemann Problem
 
-The vortical structures are noticeable if the resolution is [256, 256] and even higher
+The vortical structures are noticeable if the resolution is [256, 256] and even higher.
+
+Refer to 
+- "Numerical symmetry-perserving techniques for low-dissipation shock-capturing schemes" in Nico's thesis.
+- ["On the proper setup of the double Mach reﬂection as a test case for the resolution of gas dynamics codes"](pdf/kemm2016.pdf) for double mach reflection.
 
 ![](pics/2d_riemann.jpg)
 
 ## Kelvin–Helmholtz instability
+
+Refer to [Local Characteristic Decomposition Based Central-Upwind Scheme](https://arxiv.org/pdf/2206.08803.pdf)
 
 ![](pics/kh.jpg)
 
