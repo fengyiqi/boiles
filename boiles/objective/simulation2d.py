@@ -87,11 +87,16 @@ class Simulation2D(ObjectiveFunction):
             threshold = self.smoothness_threshold
         return internal_smoothness(self.result[property], threshold=threshold)
 
-    def truncation_errors(self):
+    def truncation_errors(self, subdomain=None):
         r"""
             return: dissipation, dispersion, true_error, abs_error
         """
-        num_rate = self.result["numerical_dissipation_rate"]
+        if subdomain is None:
+            num_rate = self.result["numerical_dissipation_rate"]
+        else:
+            row = slice(None, subdomain[0])
+            col = slice(None, subdomain[1])
+            num_rate = self.result["numerical_dissipation_rate"][row, col]
         dissipation = np.where(num_rate >= 0, num_rate, 0).sum()
         dispersion = np.where(num_rate <= 0, num_rate, 0).sum()
         true_error = num_rate.sum()
