@@ -168,7 +168,7 @@ class Simulation3D(ObjectiveFunction):
         reference = A * np.power(spectrum[:, 0], -5 / 3)
         return reference
 
-    def plot_tke(self, plot_reference = False, y_lower: float = 1e-15, y_upper = 1, save_path: str = None, grid=False):
+    def plot_tke(self, plot_reference = False, y_lower: float = 1e-15, y_upper = 1, save_path: str = None, grid=False, show=False):
         spectrum_data = self._create_spectrum()
         spectrum_ref  = self._calculate_reference(spectrum_data)
         fig, ax = plt.subplots(dpi=150)
@@ -195,6 +195,8 @@ class Simulation3D(ObjectiveFunction):
         if save_path is not None:
             fig.savefig(save_path)
         plt.tight_layout()
+        if show:
+            plt.show()
         # plt.show()
         # plt.close(fig)
 

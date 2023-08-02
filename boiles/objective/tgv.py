@@ -25,7 +25,7 @@ class TaylorGreenVortex(Simulation3D):
         self.center = 0
         self.realsize = 0
 
-    def objective_spectrum(self):
+    def objective_spectrum(self, mse: bool = False):
         r"""
         Return a clamped error
         :return: error and simulation state.
@@ -41,6 +41,8 @@ class TaylorGreenVortex(Simulation3D):
             effective_wn = slice(start_wn, self.realsize + 1)
             wn_wise_error = np.log(spectrum_data[effective_wn, 1]) - np.log(spectrum_ref[effective_wn])
             error = np.linalg.norm(wn_wise_error, ord=2)
+            if mse:
+                error = error ** 2 / (self.realsize + 1 - start_wn)
             if OP.test_cases is None:
                 return error
             else:

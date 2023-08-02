@@ -61,6 +61,7 @@ class Simulation2D(ObjectiveFunction):
         schlieren = self.get_ordered_data(file, "schlieren", order)
         temperature = self.get_ordered_data(file, "temperature", order)
         thermal_conductivity = self.get_ordered_data(file, "thermal_conductivity", order)
+        mach_number = self.get_ordered_data(file, "Mach number", order)
 
         data_dict = {
             'density': density,
@@ -77,7 +78,8 @@ class Simulation2D(ObjectiveFunction):
             'kinetic_energy': kinetic_energy,
             'schlieren': schlieren,
             'temperature': temperature,
-            'thermal_conductivity': thermal_conductivity
+            'thermal_conductivity': thermal_conductivity,
+            'mach_number': mach_number
         }
 
         return data_dict, is_integer
@@ -102,6 +104,10 @@ class Simulation2D(ObjectiveFunction):
         true_error = num_rate.sum()
         abs_error = np.abs(num_rate).sum()
         return dissipation, dispersion, true_error, abs_error
+    
+    def highorder_reconstructed_rhs(self):
+        assert self.result_exit and self.result["highorder_dissipation_rate"] is not None, "no highorder_dissipation_rate data"
+        return abs(self.result["highorder_dissipation_rate"]).sum()
 
     def plot(self, prop: str):
         plt.figure(figsize=(5, 4), dpi=100)

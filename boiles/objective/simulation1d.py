@@ -84,6 +84,9 @@ class Simulation1D(ObjectiveFunction):
         true_error = num_rate.sum()
         abs_error = np.abs(num_rate).sum()
         return dissipation, dispersion, true_error, abs_error
+    def highorder_reconstructed_rhs(self):
+        assert self.result_exit and self.result["highorder_dissipation_rate"] is not None, "no highorder_dissipation_rate data"
+        return abs(self.result["highorder_dissipation_rate"]).sum()
 
 
 def internal_smoothness(value, threshold=0.333):
