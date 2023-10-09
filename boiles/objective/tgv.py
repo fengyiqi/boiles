@@ -19,9 +19,12 @@ class TaylorGreenVortex(Simulation3D):
 
     def __init__(
             self,
-            file: str
+            file: str,
+            shape: tuple = None,
+            quantities: list = ["density", "velocity"],
+            solver: str = "ALPACA",
     ):
-        super(TaylorGreenVortex, self).__init__(file=file)
+        super(TaylorGreenVortex, self).__init__(file=file, shape=shape, quantities=quantities, solver=solver)
         self.center = 0
         self.realsize = 0
 

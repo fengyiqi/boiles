@@ -9,7 +9,20 @@ import glob
 
 
 # from mytools.opt_config import *
+vel_keys = ["velocity_x", "velocity_y", "velocity_z"]
+alpaca_available_quantities = ["density", "pressure", "velocity", "energy", "vorticity", "effective_dissipation_rate",
+                    "numerical_dissipation_rate", "highorder_dissipation_rate", "ducros", "kinetic_energy", "schlieren",
+                    "temperature", "thermal_conductivity", "mach_number"]
 
+jaxfluids_available_quantities = {
+    # "primes" : ["density", "velocity", "velocityX", "velocityY", "velocityZ", "pressure", "temperature"],
+    "primes" : ["density", "velocity", "pressure", "temperature"],
+    "cons": ["mass", "momentum", "momentumX", "momentumY", "momentumZ", "energy"],
+    "levelset": ["levelset", "volume_fraction", "mask_real", "normal", "interface_pressure", "interface_velocity"],
+    "real_fluid": [ "real_density", "real_velocity", "real_velocityX", "real_velocityY", "real_velocityZ", "real_pressure", "real_temperature",
+                    "real_mass", "real_momentum", "real_momentumX", "real_momentumY", "real_momentumZ", "real_energy" ],
+    "miscellaneous": ["mach_number", "schlieren", "absolute_velocity", "vorticity", "absolute_vorticity"],
+}
 
 def smoothness_indicator(x: list,
                          value: list,
@@ -47,26 +60,21 @@ def smoothness_indicator(x: list,
     return index[0] + 1
 
 def do_get_data(h5file, state: str, dimension: int):
-    vel_keys = ["velocity_x", "velocity_y", "velocity_z"]
-    vel_dict = {}
+    
     if state == "velocity":
+        vel_dict = {}
         for i in range(dimension):
             vel_dict[vel_keys[i]] = h5file["cell_data"][state][:, i, 0]
-        if dimension == 1:
             # for 1D, we only return an array of x velocity
-            return vel_dict["velocity_x"]
-        else:
-            return vel_dict
+        return vel_dict["velocity_x"] if dimension == 1 else vel_dict
     else:
         return h5file["cell_data"][state][:, 0, 0]
 
 
-def try_get_data(file, output: str, dimension: int):
+def try_get_data(file, quantity: str, dimension: int):
     with h5py.File(file, "r") as f:
-        if output in f["cell_data"].keys():
-            return do_get_data(f, output, dimension)
-        else:
-            return None
+        assert quantity in f["cell_data"].keys(), f"quantity {quantity} not found in {file}"
+        return do_get_data(f, quantity, dimension)
 
 
 def get_coords_and_order(cell_vertices, vertex_coordinates, dimension):
@@ -95,9 +103,8 @@ class ObjectiveFunction(object):
                  ):
         self.file_list = glob.glob(file)
         assert not len(self.file_list) > 1, "Found multiple .h5 file"
-        self.result_exit = True if len(self.file_list) == 1 else False
-        if self.result_exit:
-            self.file = self.file_list[0]
+        assert len(self.file_list) != 0, "No .h5 file found"
+        self.file = self.file_list[0]
 
 
     @abstractmethod

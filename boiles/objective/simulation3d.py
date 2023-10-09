@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 import h5py
 import sympy
-from .base import ObjectiveFunction, try_get_data, get_coords_and_order
+from .base import ObjectiveFunction, try_get_data, get_coords_and_order, alpaca_available_quantities, jaxfluids_available_quantities
 import numpy as np
 from boiles.postprocessing.smoothness import do_weno5_si, symmetry, symmetry_x_fixed_y
 
@@ -13,77 +13,72 @@ class Simulation3D(ObjectiveFunction):
     def __init__(
             self,
             file: str,
-            shape: tuple = None
+            shape: tuple = None,
+            quantities: list = ["density", "velocity"],
+            solver: str = "ALPACA",
         ):
         self.dimension = 3
         super(Simulation3D, self).__init__(file=file)
         self.shape = shape
         self.smoothness_threshold = 0.33
-        if self.result_exit:
-            self.result, self.is_square = self.get_results(self.file)
+        self.is_square = False
+        for quantity in quantities:
+            if solver.lower() == "alpaca":
+                assert quantity in alpaca_available_quantities, f"Invalid quantity: {quantity}. Valid quantities are {alpaca_available_quantities}"
+                self.result = self.get_alpaca_results(self.file, quantities)
+            elif solver.lower() == "jaxfluids":
+                assert quantity in jaxfluids_available_quantities["primes"], f"Invalid quantity: {quantity}. Valid quantities are {jaxfluids_available_quantities['primes']}"
+                self.result = self.get_jaxfluids_results(self.file, quantities)
 
-    def get_ordered_data(self, file, state: str, order):
-        data = try_get_data(file, state, self.dimension)
-        if data is not None:
-            if state == "velocity":
-                data["velocity_x"] = np.array(data["velocity_x"])[order].reshape(self.shape)
-                data["velocity_y"] = np.array(data["velocity_y"])[order].reshape(self.shape)
-                data["velocity_z"] = np.array(data["velocity_z"])[order].reshape(self.shape)
-            else:
-                data = np.array(data[order])
-                data = data.reshape(self.shape)
-            return data
+    def get_ordered_data(self, file, quantity: str, order):
+        data = try_get_data(file, quantity, self.dimension)
+        if quantity == "velocity":
+            data["velocity_x"] = np.array(data["velocity_x"])[order].reshape(self.shape)
+            data["velocity_y"] = np.array(data["velocity_y"])[order].reshape(self.shape)
+            data["velocity_z"] = np.array(data["velocity_z"])[order].reshape(self.shape)
         else:
-            return None
+            data = np.array(data[order]).reshape(self.shape)
+        return data
 
-    def get_results(self, file):
-
+    def get_alpaca_results(self, file, quantities):
+        data_dict = {}
         with h5py.File(file, "r") as data:
             cell_vertices = np.array(data["mesh_topology"]["cell_vertex_IDs"])
             vertex_coordinates = np.array(data["mesh_topology"]["cell_vertex_coordinates"])
 
         coords, order = get_coords_and_order(cell_vertices, vertex_coordinates, self.dimension)
         # edge_cells_number: the cell number along each dimension
-        edge_cells_number, is_integer = sympy.integer_nthroot(coords.shape[0], self.dimension)
+        edge_cells_number, self.is_square = sympy.integer_nthroot(coords.shape[0], self.dimension)
         if self.shape is None:
             self.shape = (edge_cells_number, edge_cells_number, edge_cells_number)
-        density = self.get_ordered_data(file, "density", order)
-        pressure = self.get_ordered_data(file, "pressure", order)
-        velocity = self.get_ordered_data(file, "velocity", order)
-        kinetic_energy = 0.5 * density * (velocity["velocity_x"]**2 + velocity["velocity_y"]**2 + velocity["velocity_z"]**2)
-        effective_dissipation_rate = self.get_ordered_data(file, "effective_dissipation_rate", order)
-        numerical_dissipation_rate = self.get_ordered_data(file, "numerical_dissipation_rate", order)
-        highorder_dissipation_rate = self.get_ordered_data(file, "highorder_dissipation_rate", order)
-        vorticity = self.get_ordered_data(file, "vorticity", order)
-        ducros = self.get_ordered_data(file, "ducros", order)
-        schlieren = self.get_ordered_data(file, "schlieren", order)
-        temperature = self.get_ordered_data(file, "temperature", order)
-        thermal_conductivity = self.get_ordered_data(file, "thermal_conductivity", order)
-
-        data_dict = {
-            'density': density,
-            'pressure': pressure,
-            'velocity_x': velocity["velocity_x"],
-            'velocity_y': velocity["velocity_y"],
-            'velocity_z': velocity["velocity_z"],
-            'vorticity': vorticity,
-            'coords': coords,
-            'effective_dissipation_rate': effective_dissipation_rate,
-            'numerical_dissipation_rate': numerical_dissipation_rate,
-            'highorder_dissipation_rate': highorder_dissipation_rate,
-            'ducros': ducros,
-            'kinetic_energy': kinetic_energy,
-            'schlieren': schlieren,
-            'temperature': temperature,
-            'thermal_conductivity': thermal_conductivity
-        }
-
-        return data_dict, is_integer
+        for quantity in quantities:
+            data_dict[quantity] = self.get_ordered_data(file, quantity, order)
+        if "density" in quantities and "velocity" in quantities:
+            data_dict["kinetic_energy"] = 0.5 * data_dict["density"] * (data_dict["velocity"]["velocity_x"]**2 + data_dict["velocity"]["velocity_y"]**2 + data_dict["velocity"]["velocity_z"]**2)
+        
+        return data_dict
+    
+    def get_jaxfluids_results(self, file, quantities):
+        data_dict = {}
+        with h5py.File(file, "r") as h5file:
+            for quantity in quantities:
+                assert quantity in jaxfluids_available_quantities["primes"], f"Invalid quantity: {quantity}. Valid primes quantities are {jaxfluids_available_quantities['primes']}"
+                if quantity == "velocity":
+                    data_dict[quantity] = {}
+                    data_dict[quantity]["velocity_x"] = h5file["primes/velocity"][..., 0]
+                    data_dict[quantity]["velocity_y"] = h5file["primes/velocity"][..., 1]
+                    data_dict[quantity]["velocity_z"] = h5file["primes/velocity"][..., 2]
+                else:
+                    data_dict[quantity] = h5file[f"primes/{quantity}"][:]
+        _, self.is_square = sympy.integer_nthroot(data_dict["density"].flatten().size, self.dimension)
+        self.shape = data_dict["density"].shape
+        return data_dict
 
     def truncation_errors(self):
         r"""
             return: dissipation, dispersion, true_error, abs_error
         """
+        assert "numerical_dissipation_rate" in self.result.keys(), "numerical_dissipation_rate not found in result"
         num_rate = self.result["numerical_dissipation_rate"]
         dissipation = np.where(num_rate >= 0, num_rate, 0).sum()
         dispersion = np.where(num_rate <= 0, num_rate, 0).sum()
@@ -92,11 +87,12 @@ class Simulation3D(ObjectiveFunction):
         return dissipation, dispersion, true_error, abs_error
 
     def _create_spectrum(self):
+        assert "velocity" in self.result.keys(), "velocity not found in result"
         if not self.is_square:
             raise RuntimeError("For non-square domain, no spectrum can be computed!")
-        velocity_x = self.result['velocity_x']
-        velocity_y = self.result['velocity_y']
-        velocity_z = self.result['velocity_z']
+        velocity_x = self.result["velocity"]['velocity_x']
+        velocity_y = self.result["velocity"]['velocity_y']
+        velocity_z = self.result["velocity"]['velocity_z']
         N = self.shape[0]
         # U0 = 33.13148
         U0 = 1.0
@@ -152,6 +148,7 @@ class Simulation3D(ObjectiveFunction):
         # np.savetxt(self.results_folder + self.result_filename[:-8] + '.csv', dataout, delimiter=",")
 
         return dataout
+    
 
     def _calculate_A(self, spectrum):
 
