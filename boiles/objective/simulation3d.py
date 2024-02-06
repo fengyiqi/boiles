@@ -22,6 +22,7 @@ class Simulation3D(ObjectiveFunction):
         self.shape = shape
         self.smoothness_threshold = 0.33
         self.is_square = False
+        self.data_order = None
         for quantity in quantities:
             if solver.lower() == "alpaca":
                 assert quantity in alpaca_available_quantities, f"Invalid quantity: {quantity}. Valid quantities are {alpaca_available_quantities}"
@@ -46,13 +47,13 @@ class Simulation3D(ObjectiveFunction):
             cell_vertices = np.array(data["mesh_topology"]["cell_vertex_IDs"])
             vertex_coordinates = np.array(data["mesh_topology"]["cell_vertex_coordinates"])
 
-        coords, order = get_coords_and_order(cell_vertices, vertex_coordinates, self.dimension)
+        coords, self.data_order = get_coords_and_order(cell_vertices, vertex_coordinates, self.dimension)
         # edge_cells_number: the cell number along each dimension
         edge_cells_number, self.is_square = sympy.integer_nthroot(coords.shape[0], self.dimension)
         if self.shape is None:
             self.shape = (edge_cells_number, edge_cells_number, edge_cells_number)
         for quantity in quantities:
-            data_dict[quantity] = self.get_ordered_data(file, quantity, order)
+            data_dict[quantity] = self.get_ordered_data(file, quantity, self.data_order)
         if "density" in quantities and "velocity" in quantities:
             data_dict["kinetic_energy"] = 0.5 * data_dict["density"] * (data_dict["velocity"]["velocity_x"]**2 + data_dict["velocity"]["velocity_y"]**2 + data_dict["velocity"]["velocity_z"]**2)
         
@@ -78,7 +79,9 @@ class Simulation3D(ObjectiveFunction):
         r"""
             return: dissipation, dispersion, true_error, abs_error
         """
-        assert "numerical_dissipation_rate" in self.result.keys(), "numerical_dissipation_rate not found in result"
+        # assert "numerical_dissipation_rate" in self.result.keys(), "numerical_dissipation_rate not found in result"
+        if not "numerical_dissipation_rate" in self.result.keys():
+            self.result["numerical_dissipation_rate"] = self.get_ordered_data(self.file, "numerical_dissipation_rate", self.data_order)
         num_rate = self.result["numerical_dissipation_rate"]
         dissipation = np.where(num_rate >= 0, num_rate, 0).sum()
         dispersion = np.where(num_rate <= 0, num_rate, 0).sum()

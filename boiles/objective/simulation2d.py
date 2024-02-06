@@ -33,7 +33,12 @@ class Simulation2D(ObjectiveFunction):
                 assert quantity in alpaca_available_quantities, f"Invalid quantity: {quantity}. Valid quantities are {alpaca_available_quantities}"
                 self.result = self.get_alpaca_results(self.file, quantities)
             elif solver.lower() == "jaxfluids":
-                assert quantity in jaxfluids_available_quantities["primes"], f"Invalid quantity: {quantity}. Valid quantities are {jaxfluids_available_quantities['primes']}"
+                found = False
+                for key in ["primitives", "miscellaneous", "levelset"]:
+                    if quantity in jaxfluids_available_quantities[key]:
+                        found = True
+                        break
+                assert found, f"Invalid quantity: {quantity}. Valid quantities are {jaxfluids_available_quantities}"
                 self.result = self.get_jaxfluids_results(self.file, quantities)
 
     def get_ordered_data(self, file, quantity: str, order):
@@ -67,13 +72,27 @@ class Simulation2D(ObjectiveFunction):
         data_dict = {}
         with h5py.File(file, "r") as h5file:
             for quantity in quantities:
-                assert quantity in jaxfluids_available_quantities["primes"], f"Invalid quantity: {quantity}. Valid primes quantities are {jaxfluids_available_quantities['primes']}"
-                if quantity == "velocity":
-                    data_dict[quantity] = {}
-                    data_dict[quantity]["velocity_x"] = h5file["primes/velocity"][0, ..., 0]
-                    data_dict[quantity]["velocity_y"] = h5file["primes/velocity"][0, ..., 1]
-                else:
-                    data_dict[quantity] = h5file[f"primes/{quantity}"][0, ...]
+                # assert quantity in jaxfluids_available_quantities["primes"], f"Invalid quantity: {quantity}. Valid primes quantities are {jaxfluids_available_quantities['primes']}"
+                if quantity in jaxfluids_available_quantities["primitives"]:
+                    if quantity == "velocity":
+                        data_dict[quantity] = {}
+                        data_dict[quantity]["velocity_x"] = h5file["primitives/velocity"][0, ..., 0]
+                        data_dict[quantity]["velocity_y"] = h5file["primitives/velocity"][0, ..., 1]
+                    else:
+                        data_dict[quantity] = h5file[f"primitives/{quantity}"][0, ...]
+                if quantity in jaxfluids_available_quantities["miscellaneous"]:
+                    if quantity == "vorticity":
+                        data_dict[quantity] = {}
+                        data_dict[quantity]["vorticity_x"] = h5file["miscellaneous/vorticity"][0, ..., 0]
+                        # data_dict[quantity]["vorticity_y"] = h5file["miscellaneous/vorticity"][0, ..., 1]
+                        # data_dict[quantity]["vorticity_z"] = h5file["miscellaneous/vorticity"][0, ..., 2]
+                    else:   
+                        data_dict[quantity] = h5file[f"miscellaneous/{quantity}"][0, ...]
+                if quantity in jaxfluids_available_quantities["levelset"]:
+                    data_dict[quantity] = h5file[f"levelset/{quantity}"][0, ...]
+                
+        _, self.is_square = sympy.integer_nthroot(data_dict["density"].flatten().size, self.dimension)
+        self.shape = data_dict["density"].shape
         return data_dict
 
     def smoothness(self, threshold=None, property="numerical_dissipation_rate"):

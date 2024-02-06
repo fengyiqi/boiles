@@ -14,14 +14,21 @@ alpaca_available_quantities = ["density", "pressure", "velocity", "energy", "vor
                     "numerical_dissipation_rate", "highorder_dissipation_rate", "ducros", "kinetic_energy", "schlieren",
                     "temperature", "thermal_conductivity", "mach_number"]
 
-jaxfluids_available_quantities = {
+# jaxfluids_available_quantities = {
     # "primes" : ["density", "velocity", "velocityX", "velocityY", "velocityZ", "pressure", "temperature"],
-    "primes" : ["density", "velocity", "pressure", "temperature"],
-    "cons": ["mass", "momentum", "momentumX", "momentumY", "momentumZ", "energy"],
-    "levelset": ["levelset", "volume_fraction", "mask_real", "normal", "interface_pressure", "interface_velocity"],
-    "real_fluid": [ "real_density", "real_velocity", "real_velocityX", "real_velocityY", "real_velocityZ", "real_pressure", "real_temperature",
-                    "real_mass", "real_momentum", "real_momentumX", "real_momentumY", "real_momentumZ", "real_energy" ],
-    "miscellaneous": ["mach_number", "schlieren", "absolute_velocity", "vorticity", "absolute_vorticity"],
+    # "primes" : ["density", "velocity", "pressure", "temperature"],
+    # "cons": ["mass", "momentum", "momentumX", "momentumY", "momentumZ", "energy"],
+    # "levelset": ["levelset", "volume_fraction", "mask_real", "normal", "interface_pressure", "interface_velocity"],
+    # "real_fluid": [ "real_density", "real_velocity", "real_velocityX", "real_velocityY", "real_velocityZ", "real_pressure", "real_temperature",
+    #                 "real_mass", "real_momentum", "real_momentumX", "real_momentumY", "real_momentumZ", "real_energy" ],
+    # "miscellaneous": ["mach_number", "schlieren", "absolute_velocity", "vorticity", "absolute_vorticity"],
+# }
+# jaxfluids_available_quantities = ["density", "pressure", "velocity", "vorticity"]
+
+jaxfluids_available_quantities = {
+    "primitives": ["density", "pressure", "velocity"],
+    "miscellaneous": ["mach_number", "schlieren", "vorticity", "highorder_dissipation_rate"],
+    "levelset": ["levelset", "volume_fraction"]
 }
 
 def smoothness_indicator(x: list,

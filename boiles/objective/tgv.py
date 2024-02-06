@@ -38,19 +38,19 @@ class TaylorGreenVortex(Simulation3D):
             upper_bound = TGVTENO5.highest_error_from_initial
         else:
             upper_bound = np.inf
-        if self.result_exit:
-            spectrum_data = self._create_spectrum()
-            spectrum_ref = self._calculate_reference(spectrum_data)
-            effective_wn = slice(start_wn, self.realsize + 1)
-            wn_wise_error = np.log(spectrum_data[effective_wn, 1]) - np.log(spectrum_ref[effective_wn])
-            error = np.linalg.norm(wn_wise_error, ord=2)
-            if mse:
-                error = error ** 2 / (self.realsize + 1 - start_wn)
-            if OP.test_cases is None:
-                return error
-            else:
-                clipped_error = np.clip(error, -np.inf, upper_bound)
-                return clipped_error, error, 'completed'
+        # if self.result_exit:
+        spectrum_data = self._create_spectrum()
+        spectrum_ref = self._calculate_reference(spectrum_data)
+        effective_wn = slice(start_wn, self.realsize + 1)
+        wn_wise_error = np.log(spectrum_data[effective_wn, 1]) - np.log(spectrum_ref[effective_wn])
+        error = np.linalg.norm(wn_wise_error, ord=2)
+        if mse:
+            error = error ** 2 / (self.realsize + 1 - start_wn)
+        if OP.test_cases is None:
+            return error
         else:
-            return upper_bound, np.nan, 'divergent'
+            clipped_error = np.clip(error, -np.inf, upper_bound)
+            return clipped_error, error, 'completed'
+        # else:
+        #     return upper_bound, np.nan, 'divergent'
 
